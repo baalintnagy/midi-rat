@@ -93,19 +93,19 @@
   while preserving their compilation classpath and required compilation errors.
   Keep checks enabled on maintained production and test sources.
 - Use the local Eclipse formatter profile and Checkstyle configuration. See
-  `docs/source-style.md` for current coverage and pending build integration.
+  `docs/source-style.md` for current build integration and enforcement coverage.
 - When introducing the selected Maven build, wire established formatting and lint
   tools into verification, pin their versions, include maintained production and
   test sources, and exclude generated/build output. Use Spotless for formatting
   and import cleanup and Checkstyle for validation; bind both checks to `verify`.
 - Once Maven integration exists, use `mvn spotless:apply` for routine Java formatting,
   `mvn spotless:check checkstyle:check` for style-only validation, and `mvn verify`
-  for build verification. These commands are not currently available in this repository.
+  for build verification. These commands are wired into the root Maven build.
 - Maintain these instructions, tool configuration, and enforcement documentation
   together. Document conventions that remain review requirements. Prefer supported
   formatter/check extensions over independent source-rewriting programs.
 - Verify tool changes against representative violations and, when automatic fixes
   exist, check that fixes preserve behavior and produce stable, accepted output.
 - Run checks appropriate to the change and report their actual scope. For this
-  documentation/configuration stage, do not imply that an application build or
-  MIDI integration test has run.
+  implementation stage, distinguish synthetic Java tests and native/package build
+  checks from physical MIDI, terminal, clean-machine, and latency qualification.

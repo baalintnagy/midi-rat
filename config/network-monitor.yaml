@@ -1,0 +1,26 @@
+schemaVersion: 1
+network:
+  buses: [monitor-input]
+  modules:
+    - name: suppress-clock
+      type: midi-message-filter
+      sources:
+        - hammer-main
+        - hammer-midi-2
+        - hammer-midi-3
+        - hammer-midi-4
+        - motu
+        - launchpad-main
+        - launchpad-midi-2
+        - launchpad-midi-3
+      destinations: [monitor-input]
+      settings:
+        whitelist: []
+        blacklist:
+          - type: CLOCK
+    - name: all-inputs-monitor
+      type: midi-monitor
+      sources: [monitor-input]
+      settings:
+        historyLimit: 2000
+        colors: true

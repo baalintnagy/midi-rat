@@ -1,0 +1,44 @@
+# Module API version 1
+
+Plugins are trusted in-process JARs. Class-loader isolation is not a sandbox.
+Compile against the MIDI Rat JAR with JDK 25. Include a UTF-8 service descriptor
+`META-INF/services/io.midirat.api.ModuleProvider` containing provider class names.
+Install the JAR in the application's configured module directory.
+
+`ModuleProvider` declares `type()`, `version()`, `apiVersion()` (1), `role()`
+(`PROCESSOR`, `MONITOR`, `EMITTER`), and
+`prepare(Value settings, List<Endpoint> subscriptions)` returning a `ModuleInstance`.
+Preparation validates all settings and resolves names before dispatch. `Value`
+preserves configuration paths/line/column and provides strict map/list/string/integer
+decoders. Preparation must not activate devices, start workers, or publish messages.
+
+`ModuleInstance.start(ModuleContext)` runs before activation. `process(Envelope)`
+receives immutable payloads and metadata and returns an ordered message list for
+all declared destinations. Calls are serialized per instance on a bounded host
+worker. Return an empty list for observer modules. Runtime processing must not
+decode YAML or perform filesystem/UI work.
+
+`ModuleContext.publish(Endpoint, List<MidiMessage>)` permits asynchronous generation
+only after start and activation and only to the instance's declared destinations.
+Synchronous transformations should return results from `process` to retain receipt
+time. `ModuleContext.report(String)` queues diagnostics; `report(ModuleError)` also
+accepts a diagnostic code and immutable context attributes. `widgetLines()` supplies
+text to host rendering; use bounded nonblocking handoff. `close()` releases owned
+resources without generating MIDI cleanup or blocking indefinitely.
+
+The host owns subscription registration, physical handles, publication, queues,
+and terminal scheduling. Plugins must not open host backend implementations.
+`Envelope` carries immediate source and receipt time relative to host start.
+`MidiMessage` defensively copies bytes and carries actual length, never display padding.
+
+The watcher debounces events, hashes installed JARs, validates a stable shadow copy,
+and discovers providers through separate URL class loaders. Unchanged packages
+retain instances and loaders. Changed instances are prepared/started before their
+old routes stop. Failed preparation/start retains the previous active routes.
+Removal disables affected instances while retaining their configuration. Reinstall
+restores them from persisted settings. No general note state is migrated or released.
+
+Errors are actionable diagnostics. A runtime instance failure disables that route;
+unrelated routes continue. Incompatible API versions and duplicate type IDs reject
+the candidate generation. Class loaders and shadow files are released when their
+generation is no longer referenced.

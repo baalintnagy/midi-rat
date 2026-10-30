@@ -1,0 +1,8 @@
+schemaVersion: 1
+application:
+  backend: winmm
+  moduleDirectory: ../modules
+  networkFile: ./network.yaml
+  ports:
+    inputs: {}
+    outputs: {}

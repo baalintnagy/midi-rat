@@ -1,0 +1,81 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "MIDI Rat: monitor inputs (Windows MIDI Services)",
+      "request": "launch",
+      "mainClass": "io.midirat.Main",
+      "projectName": "midi-rat",
+      "args": ["--config", "${workspaceFolder}/config/application-monitor-services.yaml"],
+      "vmArgs": [
+        "--enable-native-access=ALL-UNNAMED",
+        "-Djna.library.path=${workspaceFolder}/target/native",
+        "-Djava.library.path=${workspaceFolder}/target/native"
+      ],
+      "preLaunchTask": "MIDI Rat: build native bridge",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "MIDI Rat: list ports (Windows MIDI Services)",
+      "request": "launch",
+      "mainClass": "io.midirat.Main",
+      "projectName": "midi-rat",
+      "args": ["--config", "${workspaceFolder}/config/application-monitor-services.yaml", "--ports"],
+      "vmArgs": [
+        "--enable-native-access=ALL-UNNAMED",
+        "-Djna.library.path=${workspaceFolder}/target/native",
+        "-Djava.library.path=${workspaceFolder}/target/native"
+      ],
+      "preLaunchTask": "MIDI Rat: build native bridge",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "MIDI Rat: monitor inputs",
+      "request": "launch",
+      "mainClass": "io.midirat.Main",
+      "projectName": "midi-rat",
+      "args": ["--config", "${workspaceFolder}/config/application-monitor.yaml"],
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "MIDI Rat: monitor inputs (external terminal)",
+      "request": "launch",
+      "mainClass": "io.midirat.Main",
+      "projectName": "midi-rat",
+      "args": ["--config", "${workspaceFolder}/config/application-monitor.yaml"],
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"],
+      "cwd": "${workspaceFolder}",
+      "console": "externalTerminal"
+    },
+    {
+      "type": "java",
+      "name": "MIDI Rat: validate monitor configuration",
+      "request": "launch",
+      "mainClass": "io.midirat.Main",
+      "projectName": "midi-rat",
+      "args": ["--config", "${workspaceFolder}/config/application-monitor.yaml", "--validate"],
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "MIDI Rat: list MIDI ports",
+      "request": "launch",
+      "mainClass": "io.midirat.Main",
+      "projectName": "midi-rat",
+      "args": ["--config", "${workspaceFolder}/config/application-monitor.yaml", "--ports"],
+      "vmArgs": ["--enable-native-access=ALL-UNNAMED"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+# Monitor the current physical inputs
+
+[application-monitor.yaml](../config/application-monitor.yaml) binds all eight
+currently discovered WinMM inputs other than `postSSA` and `postSSB`.
+[network-monitor.yaml](../config/network-monitor.yaml) routes those inputs through
+a filter that blocks every `CLOCK` message. All other messages pass through the
+internal `monitor-input` bus to one monitor. There are no physical output bindings,
+emitters, or remappers.
+
+The filter subscribes to logical aliases such as `hammer-main` and
+`launchpad-midi-2`; the application file maps each alias to an exact physical name.
+The monitor displays `[monitor-input]` as the immediate source after filtering.
+This is a snapshot of the current devices, not an automatic wildcard subscription.
+Add a new device to both the input mappings and filter sources when needed. If a
+configured device is disconnected, startup reports the missing binding; remove it
+from both files or reconnect it before starting.
+
+## PowerShell / Windows Terminal
+
+From the repository directory, run the already-built JAR with the installed JDK 25:
+
+```powershell
+Set-Location C:\develop\gitrepos\midi-rat
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\application-monitor.yaml
+```
+
+Alternatively, use the packaged launcher and its bundled Java runtime:
+
+```powershell
+.\target\jpackage-out\MidiRat\MidiRat.exe --config .\config\application-monitor.yaml
+```
+
+Run these in an interactive terminal. Monitor controls: `p` pause/resume, `c` clear,
+`d` raw/decoded details, `y` copy the latest displayed message, `q` exit.
+
+The colored view uses bright cyan for note-on, cyan for note-off, bright yellow
+for CC, yellow for pitch bend, bright magenta for pressure/program messages,
+bright red for undefined messages, and gray for other system messages. Channel
+values are white, D1 yellow, D2 green, status red, source bright blue, and time gray.
+Numeric accents use the darker ANSI variants for note-off, pitch bend, and channel
+pressure; other types use bright accents. Labels and separators use the terminal
+default color. The same palette applies to the compact view; `colors: false` and
+the terminal's plain-color fallback disable it.
+
+To validate the files without opening devices or starting the UI:
+
+```powershell
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\application-monitor.yaml --validate
+```
+
+To rebuild the JAR without invoking native/app-image packaging:
+
+```powershell
+$env:JAVA_HOME = 'C:\Java\jdk25'
+mvn '-P!windows-package' verify
+```
+
+## VS Code
+
+Open the repository folder and install the recommended **Extension Pack for Java**
+if needed. The workspace settings select the installed `C:/Java/jdk25` runtime.
+If that location changes, update `.vscode/settings.json` and `.vscode/tasks.json`.
+
+In **Run and Debug**, select **MIDI Rat: monitor inputs**, then press F5 to debug
+or Ctrl+F5 to run. It uses the integrated terminal for keyboard input. A separate
+external-terminal launch is also available, along with validation and port-listing
+launches. Let the Java extension finish importing the Maven project before launch.
+
+Ctrl+Shift+B runs **MIDI Rat: build JAR**. **Terminal → Run Task** also offers the
+Windows distribution build and **MIDI Rat: run input monitor (JAR)**, which builds
+the JAR before running it. The VS Code Debug Console is unsuitable for the UI
+because it does not accept interactive terminal input.
+
+## Windows MIDI Services monitor
+
+[application-monitor-services.yaml](../config/application-monitor-services.yaml)
+selects `windows-midi-services`. It binds the current machine's eight physical
+input/group ports by their discovered stable IDs: Hammer 88 Pro groups 1–4,
+Launchpad Pro MK3 groups 1–3, and MOTU M Series MIDI group 1. `postSSA` and `postSSB`
+are excluded. It shares `network-monitor.yaml`, including the CLOCK blacklist,
+monitor history, and color settings.
+
+Stop the running WinMM application and start the Services configuration:
+
+```powershell
+.\target\jpackage-out\MidiRat\MidiRat.exe --config .\config\application-monitor-services.yaml
+```
+
+Inspect the native endpoint/group IDs with the same command plus `--ports`.
+The bindings are machine-specific; re-enumerate and update them if devices change.
+Changing backend requires a restart, rather than a network reload.
+
+VS Code also offers **MIDI Rat: monitor inputs (Windows MIDI Services)** and
+**MIDI Rat: list ports (Windows MIDI Services)**. Both build the native bridge first
+and set the native DLL paths to `target/native`. The packaged launcher supplies
+those DLL paths itself. The backend explicitly preloads its app-local SDK DLL
+before WinRT activation; the Windows MIDI Service must also be available.

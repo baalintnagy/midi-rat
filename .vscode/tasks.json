@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MIDI Rat: build native bridge",
+      "type": "process",
+      "command": "pwsh",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/build-native.ps1"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "MIDI Rat: build JAR",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["--batch-mode", "--no-transfer-progress", "-P!windows-package", "verify"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {"JAVA_HOME": "C:/Java/jdk25"}
+      },
+      "group": {"kind": "build", "isDefault": true},
+      "problemMatcher": []
+    },
+    {
+      "label": "MIDI Rat: build Windows distribution",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["--batch-mode", "--no-transfer-progress", "verify"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {"JAVA_HOME": "C:/Java/jdk25"}
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "MIDI Rat: run input monitor (JAR)",
+      "type": "process",
+      "command": "C:/Java/jdk25/bin/java.exe",
+      "args": [
+        "--enable-native-access=ALL-UNNAMED",
+        "-jar", "${workspaceFolder}/target/midi-rat-0.1.0-SNAPSHOT.jar",
+        "--config", "${workspaceFolder}/config/application-monitor.yaml"
+      ],
+      "dependsOn": "MIDI Rat: build JAR",
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    }
+  ]
+}

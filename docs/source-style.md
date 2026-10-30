@@ -11,14 +11,12 @@ includes these reusable settings:
 
 ## Current integration status
 
-There is no Java build descriptor or application source yet. EditorConfig can be
-used by compatible editors, and the Eclipse profile can be used by supported IDE
-or formatter integrations. Checkstyle settings are present but are not wired into
-an automated build. No formatting or lint execution is implied by their presence.
-
-Maven is selected by the final specification; build integration remains pending.
-Integrate Spotless and Checkstyle, use these local configuration paths, and bind
-their checks to `verify`. After integration, the intended commands are:
+The root Maven build compiles maintained Java sources with JDK 25 and `-Xlint:all`.
+Spotless 3.10.4 applies the local Eclipse 4.41 profile, explicit import order, import
+cleanup, and the conservative short-text-block conversion. Checkstyle 14.0.0 runs
+through Maven Checkstyle 3.6.0. Both checks bind to `verify`, including tests.
+Native generated projections, build output, and downloaded dependencies are outside
+these maintained Java roots. The commands are:
 
 ```shell
 mvn spotless:apply
@@ -30,10 +28,9 @@ Use maintained production and test source roots, including future module roots;
 exclude generated sources, vendored sources, temporary utilities, and build output.
 Do not copy unrelated module paths or application dependencies into the build.
 
-## Tooling baseline for build integration
+## Pinned tooling
 
-The imported settings were paired with the following pinned tools. These are an
-integration baseline, not installed or validated dependencies in this repository:
+The Maven descriptor pins the following tools:
 
 | Tool | Baseline version |
 | --- | --- |
@@ -41,22 +38,20 @@ integration baseline, not installed or validated dependencies in this repository
 | Eclipse JDT formatter | 4.41 |
 | Maven Checkstyle plugin | 3.6.0 |
 | Checkstyle engine | 14.0.0 |
-| Groovy JSR223, if the text-block extension is retained | 4.0.32 |
+| Groovy JSR223 | Not used; no script engine extension is required. |
 
-The formatter profile alone does not reproduce the full formatting pipeline.
-For equivalent Maven integration, configure explicit import cleanup and the import
-order `\#,java,`, and use supported Spotless steps to:
+Import order is `\#,java,`. A supported Spotless `replaceRegex` step converts the
+conservative unnecessary-single-line-text-block pattern shared with Checkstyle.
+Eclipse handles call-chain wrapping, indentation, and standard annotation placement.
+Complex string layout, receiver placement, and continuation indentation still need
+review; the formatter does not prove semantic string-value preservation. No independent
+source-rewriting utility is part of the build. Run a second `spotless:apply` pass
+when changing formatter settings to establish stable output.
 
-- Convert the conservative subset of unnecessary single-line text blocks to quoted
-  strings, keeping its pattern synchronized with Checkstyle's multiline regex.
-- Keep receivers and their first calls together while preserving comments and literals.
-- Align text-block delimiters and add one continuation level for assignments and
-  standalone return, yield, and throw expressions without changing string values.
-- Wrap long quoted string assignments and applicable annotation values.
-
-Use the existing Spotless extensions where needed rather than introducing a separate
-formatter. Validate representative fixtures and a second formatting pass when wiring
-these steps into the build. Exact build integration remains pending.
+`scripts/verify-style-contract.ps1` creates isolated fixtures under `target`, verifies
+that tabs/unused imports/annotation layout are rejected, applies automatic fixes,
+checks accepted and stable output, and compares compiled string values before/after.
+It does not alter maintained source roots or replace the formatter.
 
 ## Enforcement limits and review
 

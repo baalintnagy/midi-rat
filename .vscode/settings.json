@@ -1,0 +1,11 @@
+{
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-25",
+      "path": "C:/Java/jdk25",
+      "default": true
+    }
+  ],
+  "java.jdt.ls.java.home": "C:/Java/jdk25",
+  "java.debug.settings.console": "integratedTerminal"
+}

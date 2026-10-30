@@ -1,0 +1,18 @@
+schemaVersion: 1
+network:
+  buses: [performance]
+  modules:
+    - name: manual
+      type: midi-emitter
+      destinations: [performance]
+      settings:
+        format: hex
+        messages:
+          - "90 3C 64"
+          - "80 3C 00"
+    - name: monitor
+      type: midi-monitor
+      sources: [performance]
+      settings:
+        historyLimit: 2000
+        colors: true
