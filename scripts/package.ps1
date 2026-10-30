@@ -22,7 +22,7 @@ try {
         --java-options '--enable-native-access=ALL-UNNAMED' `
         --java-options '-Djna.library.path=$APPDIR' `
         --java-options '-Djava.library.path=$APPDIR' `
-        --add-modules java.base,java.desktop,java.logging,java.management,jdk.jfr,jdk.unsupported
+        --add-modules java.base,java.desktop,java.logging,java.management,jdk.dynalink,jdk.jfr,jdk.unsupported
     if ($LASTEXITCODE -ne 0) { throw 'jpackage failed' }
     Copy-Item -LiteralPath (Join-Path $root 'config') -Destination $image -Recurse
     New-Item -ItemType Directory -Force (Join-Path $image 'modules'), (Join-Path $image 'logs') | Out-Null

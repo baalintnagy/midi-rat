@@ -1,0 +1,11 @@
+{
+  "name": "midi-rat-tonal-bundle",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@babel/core": "7.28.5",
+    "@babel/preset-env": "7.28.5"
+  }
+}

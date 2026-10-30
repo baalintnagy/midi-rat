@@ -17,6 +17,9 @@
   pairing ledgers, dynamic tuning-channel allocation, corrective note-offs, or
   implicit panic on reload/removal/shutdown. Preserve only the defined CC-trigger
   transition state. Explicit host Panic must cover all buses as specified.
+- The user-requested `midi-chord` observer is a narrow exception: keep its own held
+  input-note counts for chord naming, combining origins and immediate sources.
+  This does not authorize note tracking or corrective output in routing/remapping.
 - The Java coding and formatting conventions requested in the original draft are
   adopted below and in the local style configuration. These rules are self-contained;
   contributors do not need another checkout to follow them.

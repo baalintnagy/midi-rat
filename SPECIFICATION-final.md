@@ -32,6 +32,7 @@ Section 15 collects them and identifies release measurements still to be establi
 | MIDI-Bus | Named, application-local broadcast endpoint. |
 | MIDI-Message-Filter | Stateless whitelist/blacklist processing and pass-through wiring. |
 | MIDI-Monitor | Observe messages in a terminal widget. |
+| MIDI-Chord | Display chord names for held notes combined across subscribed inputs. |
 | MIDI-Emitter | Send user-entered MIDI messages and sequences. |
 | MIDI-Remap | Channel, note, controller, curve, cross-type, substitution, and CC-trigger transformations. |
 | Host panic | Explicit panic on all internal buses and physical outputs. |
@@ -55,6 +56,10 @@ panic remain required.
 The CC-trigger operation retains the minimal active/inactive state required for
 threshold transitions and duplicate-trigger suppression. This is not a general
 emitted-note ledger. Reload discards that state without generating corrective messages.
+
+**[User addition, 30 October 2026]** The `midi-chord` observer maintains local held
+input-note state solely for chord naming. Origin and immediate source do not partition
+this state. The host/remap prohibition and absence of automatic corrective output remain.
 
 ## 2. Technology and system structure
 
@@ -643,6 +648,36 @@ Configuration type names remain unchanged.
 Keep the original receipt timestamp when a message traverses internal buses, and
 show immediate source separately in expanded details. Render-time timestamps must not replace receipt
 time. Copy-message strips source/time/colors and emits the syntax in Section 9.
+
+### 7.1 MIDI-Chord observer
+
+**[User addition, 30 October 2026]** Register `midi-chord` as an observer with one or
+more sources, no destinations, and `settings: {}`. Display names supplied by an
+established chord recognition library; do not implement a custom chord dictionary
+or recognition algorithm. Use Tonal 5.1.3 embedded through Rhino 1.8.1.
+
+```yaml
+- name: input-chord
+  type: midi-chord
+  sources: [monitor-input]
+  settings: {}
+```
+
+**[Design completion D15]** Held means unmatched positive-velocity note-ons, with
+velocity-zero note-ons treated as releases. Count overlapping presses per MIDI
+channel and pitch across all sources; releases decrement the aggregate count for
+that channel/pitch regardless of origin or immediate source. Ignore unmatched
+releases. Combine all channels and octaves for recognition, passing ascending MIDI
+pitches so the library retains the lowest note as bass. Duplicate held pitches
+appear once in the recognition input. Sustain/sostenuto controllers do not extend
+held-key lifetime. Explicit received CC120/CC123 clears that channel's input state.
+Other non-note messages do not affect recognition. No MIDI is emitted.
+
+Display all library candidates in library order, `--` when no notes remain, and
+`unrecognized` when the held set has no match. Also display held MIDI pitches.
+Each module instance owns independent state; reload/removal discards it silently.
+Publish immutable display snapshots to the UI. The bundled library must work offline
+with no Node/npm installation; preserve its license and reproducible build provenance.
 
 ## 8. MIDI-Emitter DSL
 

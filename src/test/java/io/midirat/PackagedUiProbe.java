@@ -3,11 +3,13 @@ package io.midirat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import dev.tamboui.backend.jline3.JLineBackend;
 import dev.tamboui.terminal.Terminal;
 import dev.tamboui.text.Text;
 import dev.tamboui.widgets.paragraph.Paragraph;
+import io.midirat.chord.TonalChordRecognizer;
 import org.jline.terminal.Size;
 import org.jline.terminal.TerminalBuilder;
 
@@ -42,5 +44,10 @@ public final class PackagedUiProbe {
             throw new IllegalStateException("Bundled runtime did not render the TamboUI frame");
         }
         System.out.println("Bundled runtime TamboUI smoke test passed.");
+        if (!new TonalChordRecognizer().recognize(List.of(60, 64, 67))
+            .contains("CM")) {
+            throw new IllegalStateException("Bundled runtime did not recognize a C major chord");
+        }
+        System.out.println("Bundled runtime Tonal chord recognition smoke test passed.");
     }
 }

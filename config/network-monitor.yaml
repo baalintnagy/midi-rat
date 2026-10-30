@@ -18,6 +18,10 @@ network:
         whitelist: []
         blacklist:
           - type: CLOCK
+    - name: input-chord
+      type: midi-chord
+      sources: [monitor-input]
+      settings: {}
     - name: all-inputs-monitor
       type: midi-monitor
       sources: [monitor-input]

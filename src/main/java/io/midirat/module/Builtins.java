@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 
 import io.midirat.api.ModuleInstance;
 import io.midirat.api.ModuleProvider;
+import io.midirat.chord.TonalChordRecognizer;
 import io.midirat.config.Value;
 import io.midirat.midi.Endpoint;
 import io.midirat.rule.MessageRule;
@@ -30,6 +31,12 @@ public final class Builtins {
                     !f.containsKey("colors")
                         || f.get("colors")
                             .bool());
+            }), provider("midi-chord", ModuleProvider.Role.MONITOR, (v, sources) -> {
+                if (!v.mapping()
+                    .isEmpty()) {
+                    throw v.error("Chord observer has no settings");
+                }
+                return new ChordModule(new TonalChordRecognizer());
             }), provider("midi-emitter", ModuleProvider.Role.EMITTER, (v, sources) -> {
                 Map<String, Value> f = v.mapping("format", "messages");
                 return new EmitterModule(f.containsKey("format") ? f.get("format")

@@ -115,6 +115,29 @@ class ConfigurationTest {
             .collect(Collectors.toMap(p -> p.type(), p -> p)));
     }
 
+    @Test
+    void chordObserverLoadsWithSourcesAndRejectsSettingsOrDestinations() throws Exception {
+        var config = network(app("[]",
+            "[{name: chord, type: midi-chord, sources: [keyboard], settings: {}}]"));
+        assertEquals("Chord: --", config.instances()
+            .getFirst()
+            .module()
+            .widgetLines()
+            .getFirst());
+        assertThrows(IllegalArgumentException.class, () -> network(app("[]",
+            """
+            [{name: chord, type: midi-chord, sources: [keyboard],
+              destinations: [synth], settings: {}}]
+            """
+        )));
+        assertThrows(IllegalArgumentException.class, () -> network(app("[]",
+            """
+            [{name: chord, type: midi-chord, sources: [keyboard],
+              settings: {unknown: true}}]
+            """
+        )));
+    }
+
     @ParameterizedTest
     @ValueSource(
         strings = { "[keyboard]", "[synth]", "[bus, bus]", "[{name: bus}]", "['']", "[1]" })

@@ -4,8 +4,8 @@
 currently discovered WinMM inputs other than `postSSA` and `postSSB`.
 [network-monitor.yaml](../config/network-monitor.yaml) routes those inputs through
 a filter that blocks every `CLOCK` message. All other messages pass through the
-internal `monitor-input` bus to one monitor. There are no physical output bindings,
-emitters, or remappers.
+internal `monitor-input` bus to a [chord observer](chord-module.md) and a message
+monitor. There are no physical output bindings, emitters, or remappers.
 
 The filter subscribes to logical aliases such as `hammer-main` and
 `launchpad-midi-2`; the application file maps each alias to an exact physical name.
