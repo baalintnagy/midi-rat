@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 4.2)
 project(midirat_bridge LANGUAGES CXX)
 if(NOT WIN32)
   message(FATAL_ERROR "The MIDI Services bridge requires Windows")

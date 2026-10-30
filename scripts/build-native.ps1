@@ -3,18 +3,27 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
-    throw 'Install Visual Studio 2022 with Desktop development with C++ (vswhere.exe is missing).'
+    throw 'Install Visual Studio 2026 Build Tools with Desktop development with C++ (vswhere.exe is missing).'
 }
-$visualStudio = & $vswhere -latest -products '*' -version '[17.0,18.0)' `
+$visualStudio = & $vswhere -latest -products '*' -version '[18.0,19.0)' `
     -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($visualStudio)) {
-    throw 'Visual Studio 2022 C++ tools not found. Use windows-2022 in CI or install the C++ workload locally.'
+    throw 'Visual Studio 2026 C++ tools not found. Use windows-2025-vs2026 in CI or install the C++ workload locally.'
+}
+if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
+    throw 'Install CMake 4.2 or newer for the Visual Studio 2026 generator.'
+}
+$cmakeCapabilities = & cmake -E capabilities
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect CMake capabilities.' }
+$cmakeCapabilities = $cmakeCapabilities | ConvertFrom-Json
+if ('Visual Studio 18 2026' -notin $cmakeCapabilities.generators.name) {
+    throw 'Install CMake 4.2 or newer for the Visual Studio 2026 generator.'
 }
 $metadata = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/UnionMetadata/10.0.26100.0/Windows.winmd'
 if (-not (Test-Path -LiteralPath $metadata -PathType Leaf)) {
     throw 'Install Windows SDK 10.0.26100.0'
 }
-Write-Host "Native toolchain: Visual Studio 2022 at $visualStudio; Windows SDK 10.0.26100.0; $Architecture"
+Write-Host "Native toolchain: Visual Studio 2026 at $visualStudio; v145; Windows SDK 10.0.26100.0; $Architecture"
 $cache = Join-Path $root 'target/native-sdk'
 New-Item -ItemType Directory -Force $cache | Out-Null
 function Get-PinnedArchive($Name, $Url, $Hash) {
@@ -41,9 +50,9 @@ $generated = Join-Path $cache 'generated'
     -input (Join-Path $cache 'midi/ref/native/Windows.Devices.Midi2.winmd') `
     -input $metadata -base -output $generated
 if ($LASTEXITCODE -ne 0) { throw 'C++/WinRT projection generation failed' }
-$build = Join-Path $root 'target/native-build'
-cmake -S (Join-Path $root 'native') -B $build -G 'Visual Studio 17 2022' `
-    -A $Architecture "-DCMAKE_GENERATOR_INSTANCE=$visualStudio" `
+$build = Join-Path $root "target/native-build-vs2026-$($Architecture.ToLowerInvariant())"
+cmake -S (Join-Path $root 'native') -B $build -G 'Visual Studio 18 2026' `
+    -A $Architecture -T v145 "-DCMAKE_GENERATOR_INSTANCE=$visualStudio" `
     "-DGENERATED_HEADERS=$generated" '-DCMAKE_SYSTEM_VERSION=10.0.26100.0'
 if ($LASTEXITCODE -ne 0) { throw 'Native configure failed' }
 cmake --build $build --config Release
@@ -57,6 +66,10 @@ Copy-Item -Path (Join-Path $runtime 'Windows.Devices.Midi2.dll'), `
 Copy-Item -LiteralPath (Join-Path $root 'native/MICROSOFT-LICENSE.txt') -Destination $out
 $redistRoot = Join-Path $visualStudio 'VC/Redist/MSVC'
 $redistVersion = Get-ChildItem -LiteralPath $redistRoot -Directory |
-    Where-Object Name -Match '^14\.' | Sort-Object Name -Descending | Select-Object -First 1
-$crt = Join-Path $redistVersion.FullName "$($Architecture.ToLowerInvariant())/Microsoft.VC143.CRT"
+    Where-Object Name -Match '^14\.' | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+if (-not $redistVersion) { throw 'Install the Visual Studio 2026 C++ redistributable component.' }
+$crt = Join-Path $redistVersion.FullName "$($Architecture.ToLowerInvariant())/Microsoft.VC145.CRT"
+if (-not (Test-Path -LiteralPath $crt -PathType Container)) {
+    throw "Visual Studio 2026 CRT files are missing: $crt"
+}
 Copy-Item -Path (Join-Path $crt '*.dll') -Destination $out

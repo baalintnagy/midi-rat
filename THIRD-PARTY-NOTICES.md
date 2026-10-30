@@ -19,7 +19,7 @@ under the MIT license. Its complete notice is retained in the application JAR at
 | JNA / JNA Platform | 5.18.1 | LGPL-2.1-or-later OR Apache-2.0, https://github.com/java-native-access/jna |
 | Windows MIDI Services SDK | 0.99.92-preview.11 | MIT, https://github.com/microsoft/MIDI |
 | C++/WinRT | 3.0.260520.1 | MIT, https://github.com/microsoft/cppwinrt |
-| Visual C++ runtime | Visual Studio 2022 redistributable | Microsoft Visual Studio redistribution terms; not covered by the SDK MIT license |
+| Visual C++ runtime | Visual Studio 2026 (VC145) redistributable | Microsoft Visual Studio redistribution terms; not covered by the SDK MIT license |
 | Eclipse Temurin | JDK 25 | GPL-2.0 with Classpath Exception; see runtime/legal |
 
 Windows MIDI Services and C++/WinRT copyright Microsoft Corporation. Their MIT

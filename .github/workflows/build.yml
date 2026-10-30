@@ -12,8 +12,8 @@ permissions:
 
 jobs:
   build:
-    # Match the pinned Visual Studio 2022 generator and Windows SDK in build-native.ps1.
-    runs-on: windows-2022
+    # Match the Visual Studio 2026 generator/toolset in build-native.ps1.
+    runs-on: windows-2025-vs2026
     outputs:
       has-build: ${{ steps.detect.outputs.has-build }}
     steps:

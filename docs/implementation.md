@@ -43,7 +43,7 @@ Median/p95/p99 use a rolling 8192-sample window; maximum/count cover the run.
 Displayed jitter is p99 minus median. Record machine/backend/device/workload with
 results; this instrumentation alone is not a latency certification.
 
-**[Implementation completion I05]** Windows x64 uses Visual Studio 2022, C++20,
+**[Implementation completion I05]** Windows x64 uses Visual Studio 2026/v145, C++20,
 Windows SDK 10.0.26100.0, Windows MIDI Services SDK 0.99.92-preview.11, and C++/WinRT
 3.0.260520.1. Native archives are SHA-256 pinned. Generated projections and build
 output are excluded from maintained-source checks. ARM64 is a native build-script
@@ -51,11 +51,14 @@ option but not a qualified app-image target. The modern bridge exposes advertise
 function-block/group-terminal-block directions as logical group ports, and disables
 automatic reconnect. Unadvertised groups are not invented.
 
-The CI build job uses `windows-2022` to match the Visual Studio 2022 CMake generator.
-The native build discovers a VS 2022 instance with C++ tools, checks the required
-SDK metadata before downloads, and supplies that same instance to CMake and CRT
-redistributable lookup. Do not move this build to `windows-latest` without verifying
-the native toolchain on the selected image. The release-only job does not compile native code.
+The CI build job uses `windows-2025-vs2026` to match the local Visual Studio 2026/v145
+toolchain. CMake 4.2 or newer is required for its `Visual Studio 18 2026` generator.
+The native build discovers a VS 2026 instance with C++ tools, checks generator support
+and SDK metadata before downloads, and supplies that same instance to CMake and
+VC145 CRT redistributable lookup. Build caches are separated by toolchain and
+architecture under `target/native-build-vs2026-*`, so prior VS 2022 caches do not
+conflict. The release-only job does not compile native code. Build Tools is sufficient;
+the IDE is optional. JDK 25 remains the Java requirement.
 
 **[Implementation completion I06]** Save serializes YAML nodes, updating only the
 selected emitter settings. Unrelated integers may be canonicalized to decimal to
