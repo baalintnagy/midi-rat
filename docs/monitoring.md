@@ -65,8 +65,12 @@ The workspace uses rounded borders with spaced titles showing each module's name
 type, and position. The focused widget has a cyan border and `>` marker. Module
 labels, numeric values, states, and separators receive lightweight syntax accents;
 MIDI row colors and fixed column widths remain unchanged. Connection status and
-recent activity have their own bordered areas. Multiple monitors divide the remaining
-content rows equally, accounting for border height and spacing. Small terminals show
+the latest activity share one compact bordered panel below the modules, using adjacent
+columns in wide terminals and stacked rows in narrow terminals. Multiple monitors divide the remaining
+content rows equally, accounting for border height and spacing. Adjacent fixed-height
+module widgets share columns when their titles and content fit. Columns adapt to the
+terminal width and current content; module order and focus navigation stay unchanged.
+Monitors always occupy a full-width row. Small terminals show
 the focused widget, while hidden monitor histories continue updating.
 
 To validate the files without opening devices or starting the UI:

@@ -1257,8 +1257,10 @@ explicit reload/reconnect/Panic/exit controls, and emitter Send/Save actions.
 Widgets use host-owned UI scheduling and release resources when their instance stops.
 
 **[User presentation addition, 30 October 2026; design completion D18]** Group the
-application title and keyboard hints with clear spacing. Present connection status,
-module widgets, and activity inside rounded borders. Highlight the focused module
+application title and keyboard hints with clear spacing. Present module widgets inside
+rounded borders. Combine connection status and the latest activity in one compact
+bordered host panel below the modules, with adjacent columns in wide terminals and
+stacked rows in narrow terminals. Keep active editor input visible. Highlight the focused module
 with a cyan border and a textual focus marker; show its position, name, and type
 in the title. Apply presentation-only token colors to module data (labels, numeric
 values, on/off states, and separators), retaining the monitor's existing event palette
@@ -1266,6 +1268,14 @@ and exact fixed-column text. Honor `NO_COLOR`, dumb terminals, and widget color
 preferences. Share available content rows equally between elastic monitors after
 accounting for borders and spacing. On small terminals show the focused widget;
 continue draining hidden monitors so their retained history remains current.
+
+**[User presentation addition, 30 October 2026; design completion D19]** Adaptively
+pack adjacent non-elastic module widgets into columns when their titles and current
+content fit the terminal width. Preserve instance order and focus navigation, keep
+elastic monitors on full-width rows, and return to stacked rows as the terminal
+narrows. Measure terminal display cells, including borders and spacing; use the
+tallest widget to determine each shared row's height. Module data and behavior stay
+unchanged.
 
 Recoverable instance errors stop or disable that instance and report an actionable
 diagnostic; unrelated instances continue where possible. Report unrecoverable host

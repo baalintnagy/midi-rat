@@ -45,25 +45,32 @@ record WorkspaceView(List<String> status, List<Instance> instances, int focused,
         List<Line> header = header();
         List<Line> activity = activity();
         List<Pane> panes = new ArrayList<>();
-        int elasticCount = 0;
-        int fixedRows = 0;
         for (Instance instance : instances) {
             ModuleWidget widget = instance.module()
                 .widget();
             // Drain hidden monitors too, preserving their history in compact mode.
             List<String> rows = widget.lines(widget.elastic() ? 1 : area.height());
             panes.add(new Pane(instance, widget, rows));
-            if (widget.elastic()) {
-                elasticCount++;
-            } else {
-                fixedRows += rows.size();
-            }
         }
-        int connectionsHeight = status.isEmpty() ? 0 : status.size() + 3;
-        int activityHeight = activity.size() + 2;
-        int chrome = panes.size() * 2 + Math.max(0, panes.size() - 1);
-        int available = area.height() - header.size() - connectionsHeight
-            - activityHeight - 1 - chrome - fixedRows;
+        List<ModuleLayout.Item> items = new ArrayList<>();
+        for (int i = 0; i < panes.size(); i++) {
+            Pane pane = panes.get(i);
+            items.add(new ModuleLayout.Item(i, preferredWidth(pane, i), pane.rows()
+                .size(),
+                pane.widget()
+                    .elastic()));
+        }
+        List<ModuleLayout.Row> layout = ModuleLayout.rows(items, area.width());
+        int elasticCount = (int) layout.stream()
+            .filter(ModuleLayout.Row::elastic)
+            .count();
+        int fixedRows = layout.stream()
+            .filter(row -> !row.elastic())
+            .mapToInt(ModuleLayout.Row::height)
+            .sum();
+        int hostHeight = hostContentHeight(area.width(), status.size(), activity.size()) + 2;
+        int chrome = layout.size() * 2 + Math.max(0, layout.size() - 1);
+        int available = area.height() - header.size() - hostHeight - 1 - chrome - fixedRows;
         boolean compact = !panes.isEmpty()
             && available < elasticCount;
         if (compact) {
@@ -73,24 +80,25 @@ record WorkspaceView(List<String> status, List<Instance> instances, int focused,
         int y = area.y();
         paragraph(new Rect(area.x(), y, area.width(), header.size()), buffer, header);
         y += header.size();
-        if (!status.isEmpty()) {
-            panel(new Rect(area.x(), y, area.width(), status.size() + 2), buffer,
-                Line.from(span(" CONNECTIONS ", Color.LIGHT_BLUE, colors)), styled(status, colors),
-                false, colors);
-            y += connectionsHeight;
-        }
         int elasticRows = elasticCount == 0 ? 0 : available / elasticCount;
-        for (int i = 0; i < panes.size(); i++) {
-            Pane pane = panes.get(i);
-            int count = pane.widget()
-                .elastic() ? elasticRows
-                    : pane.rows()
-                        .size();
-            renderPane(new Rect(area.x(), y, area.width(), count + 2), buffer, pane, i, count);
+        for (ModuleLayout.Row row : layout) {
+            int count = row.elastic() ? elasticRows : row.height();
+            int spare = area.width() - row.width();
+            int columns = row.items()
+                .size();
+            int x = area.x();
+            for (int column = 0; column < columns; column++) {
+                ModuleLayout.Item item = row.items()
+                    .get(column);
+                int width = item.width() + spare / columns + (column < spare % columns ? 1 : 0);
+                renderPane(new Rect(x, y, width, count + 2), buffer,
+                    panes.get(item.index()), item.index(), count);
+                x += width + ModuleLayout.COLUMN_GAP;
+            }
             y += count + 3;
         }
-        panel(new Rect(area.x(), area.bottom() - activityHeight, area.width(), activityHeight),
-            buffer, activityTitle(), activity, false, colors);
+        renderHost(new Rect(area.x(), area.bottom() - hostHeight, area.width(), hostHeight),
+            buffer, styled(status, colors), activity);
     }
 
     private void renderCompact(Rect area, Buffer buffer, List<Pane> panes,
@@ -98,23 +106,45 @@ record WorkspaceView(List<String> status, List<Instance> instances, int focused,
         int headerHeight = Math.min(area.height(), area.height() < 12 ? 1 : 3);
         paragraph(new Rect(area.x(), area.y(), area.width(), headerHeight), buffer, header);
         int y = area.y() + headerHeight;
-        if (area.height() >= 18
-            && !status.isEmpty()) {
-            panel(new Rect(area.x(), y, area.width(), 3), buffer,
-                Line.from(span(" CONNECTIONS ", Color.LIGHT_BLUE, colors)),
-                styled(status.subList(0, 1), colors), false, colors);
-            y += 4;
-        }
-        int footerHeight = area.height() >= 12 ? Math.min(activity.size() + 2, 5) : 0;
+        int connectionRows = Math.min(1, status.size());
+        int footerHeight = area.height() >= 12
+            ? Math.min(hostContentHeight(area.width(), connectionRows, activity.size()) + 2, 6)
+            : 0;
         int paneHeight = Math.max(0, area.bottom() - y - footerHeight
             - (footerHeight > 0 ? 1 : 0));
         int index = Math.floorMod(focused, panes.size());
         renderPane(new Rect(area.x(), y, area.width(), paneHeight), buffer,
             panes.get(index), index, Math.max(0, paneHeight - 2));
         if (footerHeight > 0) {
-            panel(new Rect(area.x(), area.bottom() - footerHeight, area.width(), footerHeight),
-                buffer, activityTitle(), compactActivity(activity, footerHeight - 2), false,
-                colors);
+            int activityCapacity = footerHeight - 2
+                - (area.width() < 100 ? connectionRows : 0);
+            renderHost(new Rect(area.x(), area.bottom() - footerHeight, area.width(), footerHeight),
+                buffer, styled(status.subList(0, connectionRows), colors),
+                compactActivity(activity, activityCapacity));
+        }
+    }
+
+    private static int hostContentHeight(int width, int connections, int activity) {
+        return width >= 100 ? Math.max(connections, activity) : connections + activity;
+    }
+
+    private void renderHost(Rect area, Buffer buffer, List<Line> connections,
+        List<Line> activity) {
+        panel(area, buffer, hostTitle(), List.of(), false, colors);
+        int width = Math.max(0, area.width() - 4);
+        int height = Math.max(0, area.height() - 2);
+        if (area.width() >= 100) {
+            int leftWidth = (width - 2) / 2;
+            paragraph(new Rect(area.x() + 2, area.y() + 1, leftWidth, height),
+                buffer, connections);
+            paragraph(new Rect(area.x() + leftWidth + 4, area.y() + 1,
+                width - leftWidth - 2, height), buffer, activity);
+        } else {
+            int connectionHeight = Math.min(connections.size(), height);
+            paragraph(new Rect(area.x() + 2, area.y() + 1, width, connectionHeight),
+                buffer, connections);
+            paragraph(new Rect(area.x() + 2, area.y() + connectionHeight + 1,
+                width, height - connectionHeight), buffer, activity);
         }
     }
 
@@ -126,27 +156,43 @@ record WorkspaceView(List<String> status, List<Instance> instances, int focused,
         return rows;
     }
 
-    private void renderPane(Rect area, Buffer buffer, Pane pane, int index, int contentRows) {
-        boolean selected = index == Math.floorMod(focused, instances.size());
-        boolean enabled = colors
-            && pane.widget()
-                .colors();
+    private int preferredWidth(Pane pane, int index) {
+        int contentWidth = pane.rows()
+            .stream()
+            .map(Line::from)
+            .mapToInt(Line::width)
+            .max()
+            .orElse(0) + 4;
+        return Math.max(24,
+            Math.max(contentWidth, paneTitle(pane, index, true, false).width() + 2));
+    }
+
+    private Line paneTitle(Pane pane, int index, boolean selected, boolean enabled) {
         Line title = Line.from(
             span(" %s %d/%d  %s  ".formatted(selected ? ">" : " ", index + 1,
                 instances.size(), pane.instance()
                     .name()),
                 selected ? Color.LIGHT_CYAN : Color.WHITE, enabled),
             span("%s ".formatted(pane.instance()
-                .type()), Color.LIGHT_MAGENTA, enabled));
+                .type()), Color.LIGHT_BLUE, enabled));
         if (enabled) {
             title = title.bold();
         }
+        return title;
+    }
+
+    private void renderPane(Rect area, Buffer buffer, Pane pane, int index, int contentRows) {
+        boolean selected = index == Math.floorMod(focused, instances.size());
+        boolean enabled = colors
+            && pane.widget()
+                .colors();
         List<String> rows = pane.widget()
             .elastic()
                 ? pane.widget()
                     .lines(contentRows)
                 : pane.rows();
-        panel(area, buffer, title, styled(rows, enabled), selected, enabled);
+        panel(area, buffer, paneTitle(pane, index, selected, enabled),
+            styled(rows, enabled), selected, enabled);
     }
 
     private static void panel(Rect area, Buffer buffer, Line title, List<Line> rows,
@@ -219,8 +265,8 @@ record WorkspaceView(List<String> status, List<Instance> instances, int focused,
         return lines;
     }
 
-    private Line activityTitle() {
-        return Line.from(span(" ACTIVITY ", Color.LIGHT_BLUE, colors),
+    private Line hostTitle() {
+        return Line.from(span(" CONNECTIONS / ACTIVITY ", Color.LIGHT_BLUE, colors),
             span(" log drops: %d ".formatted(droppedDiagnostics),
                 droppedDiagnostics == 0 ? Color.DARK_GRAY : Color.LIGHT_RED, colors));
     }
@@ -237,7 +283,7 @@ record WorkspaceView(List<String> status, List<Instance> instances, int focused,
             lines.add(ModuleTextStyle.render("Copy: %s".formatted(copied), colors));
         }
         diagnostics.stream()
-            .skip(Math.max(0, diagnostics.size() - 3))
+            .skip(Math.max(0, diagnostics.size() - 1))
             .map(row -> ModuleTextStyle.render(row, colors))
             .forEach(lines::add);
         if (lines.isEmpty()) {

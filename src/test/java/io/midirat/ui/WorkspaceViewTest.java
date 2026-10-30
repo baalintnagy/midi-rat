@@ -70,7 +70,7 @@ class WorkspaceViewTest {
             .anyMatch(position -> buffer.get(position)
                 .style()
                 .fg()
-                .filter(Color.LIGHT_MAGENTA::equals)
+                .filter(Color.LIGHT_BLUE::equals)
                 .isPresent()));
         assertTrue(IntStream.range(0, area.height())
             .anyMatch(y -> buffer.get(0, y)
@@ -81,6 +81,84 @@ class WorkspaceViewTest {
                     .fg()
                     .orElseThrow()
                     .equals(Color.LIGHT_CYAN)));
+    }
+
+    @Test
+    void compactWidgetsShareColumnsAndStackWhenTheTerminalNarrows() {
+        var instances = List.of(
+            instance("filter", ModuleWidget.fixed(() -> List.of("Filter: 6 rules"))),
+            instance("chord",
+                ModuleWidget.fixed(() -> List.of("Chord: CM", "Note names: C, E, G"))),
+            instance("emitter", ModuleWidget.fixed(() -> List.of("Messages: 0"))));
+        for (int width : List.of(60, 160)) {
+            var area = Rect.of(width, 30);
+            var buffer = Buffer.empty(area);
+            view(instances, 1, true).render(area, buffer);
+            String rendered = text(buffer);
+            int firstRow = rendered.indexOf("1/3") / (width + 1);
+            int secondRow = rendered.indexOf("> 2/3") / (width + 1);
+            int thirdRow = rendered.indexOf("3/3") / (width + 1);
+            if (width == 160) {
+                assertEquals(firstRow, secondRow);
+                assertEquals(secondRow, thirdRow);
+            } else {
+                assertTrue(firstRow < secondRow);
+                assertTrue(secondRow < thirdRow);
+            }
+            assertTrue(rendered.contains("Note names: C, E, G"));
+            assertTrue(rendered.contains("Messages: 0"));
+            assertEquals(4, rendered.chars()
+                .filter(symbol -> symbol == '╭')
+                .count());
+        }
+    }
+
+    @Test
+    void monitorsKeepTheirOwnFullWidthRowsBetweenCompactWidgets() {
+        var monitor = new ElasticRows();
+        var instances = List.of(
+            instance("filter", ModuleWidget.fixed(() -> List.of("Filter: 6 rules"))),
+            instance("monitor", monitor),
+            instance("chord", ModuleWidget.fixed(() -> List.of("Chord: CM"))),
+            instance("emitter", ModuleWidget.fixed(() -> List.of("Messages: 0"))));
+        var area = Rect.of(160, 30);
+        var buffer = Buffer.empty(area);
+        view(instances, 1, true).render(area, buffer);
+        String rendered = text(buffer);
+        int monitorRow = rendered.indexOf("> 2/4") / (area.width() + 1);
+        assertEquals("╭", buffer.get(0, monitorRow)
+            .symbol());
+        assertEquals("╮", buffer.get(area.width() - 1, monitorRow)
+            .symbol());
+        assertTrue(rendered.indexOf("1/4") < rendered.indexOf("> 2/4"));
+        assertTrue(rendered.indexOf("> 2/4") < rendered.indexOf("3/4"));
+        assertEquals(rendered.indexOf("3/4") / (area.width() + 1),
+            rendered.indexOf("4/4") / (area.width() + 1));
+        assertTrue(monitor.budget > 1);
+    }
+
+    @Test
+    void hostStatusAndLatestActivityShareOneCompactPanel() {
+        for (int width : List.of(80, 160)) {
+            var area = Rect.of(width, 20);
+            var buffer = Buffer.empty(area);
+            new WorkspaceView(List.of("winmm | inputs=8", "postSSB [open]"), List.of(), 0,
+                List.of("earlier event", "latest event"), 2,
+                new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
+            String rendered = text(buffer);
+            assertTrue(rendered.contains("CONNECTIONS / ACTIVITY"));
+            assertTrue(rendered.contains("log drops: 2"));
+            assertTrue(rendered.contains("winmm | inputs=8"));
+            assertTrue(rendered.contains("postSSB [open]"));
+            assertTrue(rendered.contains("latest event"));
+            assertFalse(rendered.contains("earlier event"));
+            assertEquals(1, rendered.chars()
+                .filter(symbol -> symbol == '╭')
+                .count());
+            int connectionRow = rendered.indexOf("winmm") / (width + 1);
+            int activityRow = rendered.indexOf("latest event") / (width + 1);
+            assertEquals(width >= 100 ? connectionRow : connectionRow + 2, activityRow);
+        }
     }
 
     @Test
