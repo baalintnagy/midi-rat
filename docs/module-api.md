@@ -54,6 +54,12 @@ known to the network, for validating origin selectors before activation.
 default adapter still calls legacy `widgetLines()`, so existing providers retain
 their fixed-height behavior without implementing the new optional methods.
 
+`EmitterControls.snapshot()` returns an immutable `Sequence(format, messages)`.
+The built-in emitter validates and publishes an entire sequence atomically; compile,
+render, edit initialization, and Save each consume one snapshot. Existing emitter
+capabilities inherit an adapter over `format()` and `messages()`. Implementations
+that edit concurrently should override `snapshot()` to return coherent content.
+
 The watcher debounces events, hashes installed JARs, validates a stable shadow copy,
 and discovers providers through separate URL class loaders. Unchanged packages
 retain instances and loaders. Changed instances are prepared/started before their

@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 
 import io.midirat.api.ModuleInstance;
 import io.midirat.api.ModuleProvider;
+import io.midirat.api.ModuleProvider.Role;
 import io.midirat.chord.TonalChordRecognizer;
 import io.midirat.config.Value;
 import io.midirat.midi.Endpoint;
@@ -18,63 +19,81 @@ public final class Builtins {
     }
 
     public static List<ModuleProvider> providers() {
-        return List
-            .of(provider("midi-message-filter", ModuleProvider.Role.PROCESSOR, (v, sources) -> {
-                Map<String, Value> f = v.mapping("whitelist", "blacklist");
-                return new FilterModule(rules(f.get("whitelist"), sources),
-                    rules(f.get("blacklist"), sources));
-            }), provider("midi-monitor", ModuleProvider.Role.MONITOR, (v, sources) -> {
-                Map<String, Value> f = v.mapping("historyLimit", "colors");
-                return new MonitorModule(f.containsKey("historyLimit")
-                    ? f.get("historyLimit")
-                        .integer(1, 100_000)
-                    : 2000,
-                    !f.containsKey("colors")
-                        || f.get("colors")
-                            .bool());
-            }), provider("midi-chord", ModuleProvider.Role.MONITOR, (v, sources) -> {
-                if (!v.mapping()
-                    .isEmpty()) {
-                    throw v.error("Chord observer has no settings");
-                }
-                return new ChordModule(new TonalChordRecognizer());
-            }), provider("sostenuto", ModuleProvider.Role.PROCESSOR,
-                (v, sources) -> new SostenutoModule(SostenutoDecoder.decode(v, sources))),
-                provider("midi-emitter", ModuleProvider.Role.EMITTER, (v, sources) -> {
-                    Map<String, Value> f = v.mapping("format", "messages");
-                    return new EmitterModule(f.containsKey("format") ? f.get("format")
-                        .string() : "hex",
-                        f.containsKey("messages") ? f.get("messages")
-                            .list()
-                            .stream()
-                            .map(Value::string)
-                            .toList() : List.of());
-                }), provider("midi-remap", ModuleProvider.Role.PROCESSOR, (v, sources) -> {
-                    Map<String, Value> f = v.mapping("curves", "rules");
-                    Map<String, Curve> curves = f.containsKey("curves")
-                        ? ActionDecoder.curves(f.get("curves"))
-                        : Map.of();
-                    List<RemapModule.Rule> rules = Value.required(f, "rules", v)
-                        .list()
-                        .stream()
-                        .map(r -> {
-                            Map<String, Value> fields = r.mapping("match", "action", "flow");
-                            MessageRule match = RuleDecoder.decode(
-                                Value.required(fields, "match", r),
-                                sources);
-                            String flow = fields.containsKey("flow") ? fields.get("flow")
-                                .string() : "stop";
-                            if (!flow.equals("stop")
-                                && !flow.equals("continue")) {
-                                throw r.error("flow must be stop or continue");
-                            }
-                            return new RemapModule.Rule(match, ActionDecoder.decode(
-                                Value.required(fields, "action", r), match.type(), curves),
-                                flow.equals("stop"));
-                        })
-                        .toList();
-                    return new RemapModule(rules);
-                }));
+        return List.of(
+            new Provider("midi-message-filter", Role.PROCESSOR, Builtins::filter),
+            new Provider("midi-monitor", Role.MONITOR, Builtins::monitor),
+            new Provider("midi-chord", Role.MONITOR, Builtins::chord),
+            new Provider("sostenuto", Role.PROCESSOR, Builtins::sostenuto),
+            new Provider("midi-emitter", Role.EMITTER, Builtins::emitter),
+            new Provider("midi-remap", Role.PROCESSOR, Builtins::remap));
+    }
+
+    private static ModuleInstance filter(Value settings, List<Endpoint> sources) {
+        Map<String, Value> fields = settings.mapping("whitelist", "blacklist");
+        return new FilterModule(rules(fields.get("whitelist"), sources),
+            rules(fields.get("blacklist"), sources));
+    }
+
+    private static ModuleInstance monitor(Value settings, List<Endpoint> sources) {
+        Map<String, Value> fields = settings.mapping("historyLimit", "colors");
+        return new MonitorModule(fields.containsKey("historyLimit")
+            ? fields.get("historyLimit")
+                .integer(1, 100_000)
+            : 2000,
+            !fields.containsKey("colors")
+                || fields.get("colors")
+                    .bool());
+    }
+
+    private static ModuleInstance chord(Value settings, List<Endpoint> sources) {
+        if (!settings.mapping()
+            .isEmpty()) {
+            throw settings.error("Chord observer has no settings");
+        }
+        return new ChordModule(new TonalChordRecognizer());
+    }
+
+    private static ModuleInstance sostenuto(Value settings, List<Endpoint> sources) {
+        return new SostenutoModule(SostenutoDecoder.decode(settings, sources));
+    }
+
+    private static ModuleInstance emitter(Value settings, List<Endpoint> sources) {
+        Map<String, Value> fields = settings.mapping("format", "messages");
+        return new EmitterModule(fields.containsKey("format") ? fields.get("format")
+            .string() : "hex",
+            fields.containsKey("messages") ? fields.get("messages")
+                .list()
+                .stream()
+                .map(Value::string)
+                .toList() : List.of());
+    }
+
+    private static ModuleInstance remap(Value settings, List<Endpoint> sources) {
+        Map<String, Value> fields = settings.mapping("curves", "rules");
+        Map<String, Curve> curves = fields.containsKey("curves")
+            ? ActionDecoder.curves(fields.get("curves"))
+            : Map.of();
+        List<RemapModule.Rule> rules = Value.required(fields, "rules", settings)
+            .list()
+            .stream()
+            .map(rule -> remapRule(rule, sources, curves))
+            .toList();
+        return new RemapModule(rules);
+    }
+
+    private static RemapModule.Rule remapRule(Value rule, List<Endpoint> sources,
+        Map<String, Curve> curves) {
+        Map<String, Value> fields = rule.mapping("match", "action", "flow");
+        MessageRule match = RuleDecoder.decode(Value.required(fields, "match", rule), sources);
+        String flow = fields.containsKey("flow") ? fields.get("flow")
+            .string() : "stop";
+        if (!flow.equals("stop")
+            && !flow.equals("continue")) {
+            throw rule.error("flow must be stop or continue");
+        }
+        return new RemapModule.Rule(match,
+            ActionDecoder.decode(Value.required(fields, "action", rule), match.type(), curves),
+            flow.equals("stop"));
     }
 
     private static List<MessageRule> rules(Value value, List<Endpoint> sources) {
@@ -85,33 +104,21 @@ public final class Builtins {
                 .toList();
     }
 
-    private static ModuleProvider provider(String type, ModuleProvider.Role role,
-        BiFunction<Value, List<Endpoint>, ModuleInstance> prepare) {
-        return new ModuleProvider() {
-            @Override
-            public String type() {
-                return type;
-            }
+    private record Provider(String type, Role role,
+        BiFunction<Value, List<Endpoint>, ModuleInstance> factory) implements ModuleProvider {
+        @Override
+        public String version() {
+            return "1.0.0";
+        }
 
-            @Override
-            public String version() {
-                return "1.0.0";
-            }
+        @Override
+        public int apiVersion() {
+            return HOST_API_VERSION;
+        }
 
-            @Override
-            public int apiVersion() {
-                return HOST_API_VERSION;
-            }
-
-            @Override
-            public Role role() {
-                return role;
-            }
-
-            @Override
-            public ModuleInstance prepare(Value settings, List<Endpoint> sources) {
-                return prepare.apply(settings, sources);
-            }
-        };
+        @Override
+        public ModuleInstance prepare(Value settings, List<Endpoint> sources) {
+            return factory.apply(settings, sources);
+        }
     }
 }

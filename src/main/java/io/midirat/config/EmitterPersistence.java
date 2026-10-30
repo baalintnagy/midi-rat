@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.midirat.api.EmitterControls;
+import io.midirat.api.EmitterControls.Sequence;
 import io.midirat.midi.MessageCodec;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -26,6 +27,7 @@ public final class EmitterPersistence {
 
     public static byte[] save(Path file, byte[] expected, String name,
         EmitterControls emitter) throws IOException {
+        Sequence sequence = emitter.snapshot();
         if (!Arrays.equals(expected, Files.readAllBytes(file))) {
             throw new IOException(
                 "Network changed externally; reload or resolve edits before Save");
@@ -54,8 +56,8 @@ public final class EmitterPersistence {
                     || key.equals("messages");
             });
         mapping.getValue()
-            .add(new NodeTuple(string("format"), string(emitter.format())));
-        List<Node> messages = emitter.messages()
+            .add(new NodeTuple(string("format"), string(sequence.format())));
+        List<Node> messages = sequence.messages()
             .stream()
             .map(EmitterPersistence::string)
             .map(n -> (Node) n)

@@ -9,6 +9,7 @@ The requirements are in [SPECIFICATION-final.md](SPECIFICATION-final.md).
 Install JDK 25 and Maven 3.9 or newer. Windows packaging also requires PowerShell 7, Visual
 Studio 2022 C++ tools, CMake 3.25 or newer, and Windows SDK 10.0.26100.0. The build
 downloads checksum-pinned Windows MIDI Services and C++/WinRT packages.
+The GitHub Actions build uses `windows-2022` to match the required VS 2022 toolchain.
 
 ```powershell
 mvn spotless:apply

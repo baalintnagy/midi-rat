@@ -55,57 +55,65 @@ public final class SostenutoState {
         int channel = message.channel() - 1;
         if (type == MessageType.NOTE_ON
             || type == MessageType.NOTE_OFF) {
-            int note = message.data1();
-            pressed[channel][note] = type == MessageType.NOTE_ON;
-            if (type == MessageType.NOTE_OFF) {
-                deferred[channel][note] = sustain[channel]
-                    || (sostenuto[channel]
-                        && latched[channel][note]);
-                if (deferred[channel][note]) {
-                    return List.of();
-                }
-            }
-            return List.of(message);
+            return note(message, type, channel);
         }
         if (type != MessageType.CC) {
             return List.of(message);
         }
-        int cc = message.data1();
-        if (cc == 120
-            || cc == 123) {
+        return switch (message.data1()) {
+        case 120, 123 -> {
             clear(channel, true);
-            return List.of(message);
+            yield List.of(message);
         }
-        if (cc == 121) {
-            sustain[channel] = false;
-            sostenuto[channel] = false;
-            List<MidiMessage> released = release(channel);
-            clear(channel, false);
-            released.add(message);
-            return List.copyOf(released);
-        }
-        if (cc == 64) {
+        case 121 -> resetControllers(message, channel);
+        case 64 -> {
             sustain[channel] = message.data2() >= 64;
-            return List.copyOf(release(channel));
+            yield List.copyOf(release(channel));
         }
-        if (cc == 66) {
-            boolean wasOn = sostenuto[channel];
-            boolean nowOn = wasOn ? message.data2() > settings.releaseThreshold()
-                : message.data2() >= settings.activationThreshold();
-            if (nowOn
-                && !wasOn) {
-                for (int note = 0; note < 128; note++) {
-                    latched[channel][note] = pressed[channel][note]
-                        || deferred[channel][note];
-                }
+        case 66 -> applySostenuto(message.data2(), channel);
+        default -> List.of(message);
+        };
+    }
+
+    private List<MidiMessage> note(MidiMessage message, MessageType type, int channel) {
+        int note = message.data1();
+        pressed[channel][note] = type == MessageType.NOTE_ON;
+        if (type == MessageType.NOTE_OFF) {
+            deferred[channel][note] = sustain[channel]
+                || (sostenuto[channel]
+                    && latched[channel][note]);
+            if (deferred[channel][note]) {
+                return List.of();
             }
-            sostenuto[channel] = nowOn;
-            if (!nowOn) {
-                Arrays.fill(latched[channel], false);
-            }
-            return List.copyOf(release(channel));
         }
         return List.of(message);
+    }
+
+    private List<MidiMessage> resetControllers(MidiMessage message, int channel) {
+        sustain[channel] = false;
+        sostenuto[channel] = false;
+        List<MidiMessage> released = release(channel);
+        clear(channel, false);
+        released.add(message);
+        return List.copyOf(released);
+    }
+
+    private List<MidiMessage> applySostenuto(int value, int channel) {
+        boolean wasOn = sostenuto[channel];
+        boolean nowOn = wasOn ? value > settings.releaseThreshold()
+            : value >= settings.activationThreshold();
+        if (nowOn
+            && !wasOn) {
+            for (int note = 0; note < 128; note++) {
+                latched[channel][note] = pressed[channel][note]
+                    || deferred[channel][note];
+            }
+        }
+        sostenuto[channel] = nowOn;
+        if (!nowOn) {
+            Arrays.fill(latched[channel], false);
+        }
+        return List.copyOf(release(channel));
     }
 
     private List<MidiMessage> release(int channel) {

@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import io.midirat.api.ModuleContext;
 import io.midirat.midi.Envelope;
@@ -16,6 +17,10 @@ import io.midirat.sostenuto.SostenutoSettings.UmbrellaTiming;
 
 /** Ordered, bounded retrigger pulses; cancellation never invents lifecycle MIDI. */
 public final class Umbrella implements AutoCloseable {
+    private enum Phase {
+        NOTE_ON, PEDAL_UP
+    }
+
     private static final int MAX_PENDING = 4096;
     private final ModuleContext context;
     private final UmbrellaTiming timing;
@@ -51,15 +56,11 @@ public final class Umbrella implements AutoCloseable {
     }
 
     private List<MidiMessage> cancelNote(int channel, int note) {
-        List<Pending> cancelled = pending.stream()
-            .filter(task -> task.channel == channel
-                && !task.finish
-                && task.noteOn.data1() == note)
-            .toList();
-        cancelled.forEach(task -> task.future.cancel(false));
-        pending.removeAll(cancelled);
-        depth[channel] -= cancelled.size();
-        return !cancelled.isEmpty()
+        int cancelled = cancelPending(task -> task.channel == channel
+            && task.phase == Phase.NOTE_ON
+            && task.noteOn.data1() == note);
+        depth[channel] -= cancelled;
+        return cancelled > 0
             && depth[channel] == 0
                 ? List.of(control(channel, 0))
                 : List.of();
@@ -79,16 +80,12 @@ public final class Umbrella implements AutoCloseable {
             context.forward(input, List.of(control(channel, 127)));
         }
         depth[channel]++;
-        schedule(new Pending(input, noteOn, channel, false), timing.delayMs());
+        schedule(new Pending(input, noteOn, channel, Phase.NOTE_ON), timing.delayMs());
     }
 
     /** An explicit received reset may release a pulse and cancel delayed retriggers. */
     public synchronized List<MidiMessage> reset(int channel) {
-        List<Pending> cancelled = pending.stream()
-            .filter(task -> task.channel == channel)
-            .toList();
-        cancelled.forEach(task -> task.future.cancel(false));
-        pending.removeAll(cancelled);
+        cancelPending(task -> task.channel == channel);
         boolean active = depth[channel] > 0;
         depth[channel] = 0;
         return active ? List.of(control(channel, 0)) : List.of();
@@ -99,6 +96,15 @@ public final class Umbrella implements AutoCloseable {
         pending.add(task);
     }
 
+    private int cancelPending(Predicate<Pending> selection) {
+        List<Pending> cancelled = pending.stream()
+            .filter(selection)
+            .toList();
+        cancelled.forEach(task -> task.future.cancel(false));
+        pending.removeAll(cancelled);
+        return cancelled.size();
+    }
+
     private static MidiMessage control(int channel, int value) {
         return MidiMessage.shortMessage(0xB0 | channel, 64, value);
     }
@@ -106,8 +112,7 @@ public final class Umbrella implements AutoCloseable {
     @Override
     public synchronized void close() {
         closed = true;
-        pending.forEach(task -> task.future.cancel(false));
-        pending.clear();
+        cancelPending(_ -> true);
         scheduler.shutdownNow();
     }
 
@@ -115,14 +120,14 @@ public final class Umbrella implements AutoCloseable {
         private final Envelope input;
         private final MidiMessage noteOn;
         private final int channel;
-        private final boolean finish;
+        private final Phase phase;
         private ScheduledFuture<?> future;
 
-        Pending(Envelope input, MidiMessage noteOn, int channel, boolean finish) {
+        Pending(Envelope input, MidiMessage noteOn, int channel, Phase phase) {
             this.input = input;
             this.noteOn = noteOn;
             this.channel = channel;
-            this.finish = finish;
+            this.phase = phase;
         }
 
         @Override
@@ -133,14 +138,15 @@ public final class Umbrella implements AutoCloseable {
                     return;
                 }
                 try {
-                    if (finish) {
+                    if (phase == Phase.PEDAL_UP) {
                         depth[channel]--;
                         if (depth[channel] == 0) {
                             context.forward(input, List.of(control(channel, 0)));
                         }
                     } else {
                         context.forward(input, List.of(noteOn));
-                        schedule(new Pending(input, noteOn, channel, true), timing.tailMs());
+                        schedule(new Pending(input, noteOn, channel, Phase.PEDAL_UP),
+                            timing.tailMs());
                     }
                 } catch (RuntimeException exception) {
                     reset(channel);

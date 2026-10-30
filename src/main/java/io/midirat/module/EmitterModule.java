@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.midirat.api.EmitterControls;
+import io.midirat.api.EmitterControls.Sequence;
 import io.midirat.api.ModuleInstance;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MessageCodec;
@@ -16,19 +17,23 @@ public final class EmitterModule implements ModuleInstance, EmitterControls {
         return Optional.of(this);
     }
 
-    private String format;
-    private List<String> messages;
+    private volatile Sequence sequence;
 
     public EmitterModule(String format, List<String> messages) {
         edit(format, messages);
     }
 
     public String format() {
-        return format;
+        return sequence.format();
     }
 
     public List<String> messages() {
-        return messages;
+        return sequence.messages();
+    }
+
+    @Override
+    public Sequence snapshot() {
+        return sequence;
     }
 
     public void edit(String nextFormat, List<String> nextMessages) {
@@ -36,15 +41,17 @@ public final class EmitterModule implements ModuleInstance, EmitterControls {
             && !nextFormat.equals("message-text")) {
             throw new IllegalArgumentException("format must be hex or message-text");
         }
-        if (!nextMessages.isEmpty()) {
-            MessageCodec.sequence(nextFormat, nextMessages);
+        Sequence next = new Sequence(nextFormat, nextMessages);
+        if (!next.messages()
+            .isEmpty()) {
+            MessageCodec.sequence(next.format(), next.messages());
         }
-        format = nextFormat;
-        messages = List.copyOf(nextMessages);
+        sequence = next;
     }
 
     public List<MidiMessage> compile() {
-        return MessageCodec.sequence(format, messages);
+        Sequence current = snapshot();
+        return MessageCodec.sequence(current.format(), current.messages());
     }
 
     @Override
@@ -54,10 +61,13 @@ public final class EmitterModule implements ModuleInstance, EmitterControls {
 
     @Override
     public List<String> widgetLines() {
+        Sequence current = snapshot();
         return Stream.concat(
             Stream.of("Emitter (%s): %d messages; Enter sends, s saves, e edits"
-                .formatted(format, messages.size())),
-            messages.stream())
+                .formatted(current.format(), current.messages()
+                    .size())),
+            current.messages()
+                .stream())
             .toList();
     }
 }

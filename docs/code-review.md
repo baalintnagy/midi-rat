@@ -19,6 +19,22 @@ MIDI semantics or replacing libraries.
   and raw/semantic validation diagnostics and their evaluation order.
 - Channel-family classification explicitly lists supported kinds rather than relying
   on enum declaration order.
+- Built-in registration is a list of provider metadata and named factories. YAML
+  decoding no longer sits inside a large registry lambda; remap rule preparation
+  also has a named boundary. Provider IDs, roles, versions, and ordering are preserved.
+- Chord held-key behavior lives in `HeldNotes`; `ChordFormat` owns its display text.
+  `ChordModule` coordinates state, the library recognizer, and immutable UI lines.
+  Retrigger, channel, release, and unrecognized-chord behavior remains covered by
+  the existing regression suite.
+- Sostenuto decoding has separate trigger, control-source/origin, and timing steps,
+  preserving defaults, diagnostics, and validation order. Pedal handling uses named
+  note, reset, and sostenuto transitions. Timed umbrella work has explicit phases
+  and one cancellation implementation, retaining its synchronization and queue bound.
+- Emitter format/messages are published as one immutable, volatile sequence after
+  validation. Compilation, rendering, editor initialization, and Save read a single
+  snapshot. Failed edits retain the previous valid content. A concurrent-edit test
+  covers coherent compilation, snapshots, and rendering; the default capability
+  adapter is tested for compatibility with existing emitter implementations.
 
 New API methods are defaults: existing plugin providers need no implementation
 changes. No configuration schema, MIDI transformation, queue capacity, panic,
@@ -36,8 +52,8 @@ or a universal nullable object would weaken it.
 The workspace layout and native adapters are still relatively large. Future work
 can extract layout calculations and native resource wrappers, but native ownership,
 driver-error recovery, and worker shutdown need stronger device-level coverage before
-altering their concurrency structure. Emitter content is mutable across UI/host
-threads and merits a separate concurrency review. The monitor formatter still exposes
+altering their concurrency structure. Third-party emitter implementations with mutable
+state should override the default snapshot adapter to publish coherent edits. The monitor formatter still exposes
 text that the terminal layer splits into fields; a typed presentation model would
 remove that coupling, but requires a deliberate compatible widget API evolution.
 

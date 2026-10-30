@@ -51,6 +51,12 @@ option but not a qualified app-image target. The modern bridge exposes advertise
 function-block/group-terminal-block directions as logical group ports, and disables
 automatic reconnect. Unadvertised groups are not invented.
 
+The CI build job uses `windows-2022` to match the Visual Studio 2022 CMake generator.
+The native build discovers a VS 2022 instance with C++ tools, checks the required
+SDK metadata before downloads, and supplies that same instance to CMake and CRT
+redistributable lookup. Do not move this build to `windows-latest` without verifying
+the native toolchain on the selected image. The release-only job does not compile native code.
+
 **[Implementation completion I06]** Save serializes YAML nodes, updating only the
 selected emitter settings. Unrelated integers may be canonicalized to decimal to
 preserve their decoded meaning; comments/layout are not preserved. Writes compare

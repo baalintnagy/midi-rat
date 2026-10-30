@@ -30,11 +30,8 @@ public final class SostenutoTrigger {
             || settings.controlOrigins()
                 .contains(input.origin()
                     .name());
-        boolean matches = message.data1() == trigger.number()
-            && (trigger.note() ? message.type() == MessageType.NOTE_ON
-                || message.type() == MessageType.NOTE_OFF : message.type() == MessageType.CC);
         if (!controlSource
-            || !matches) {
+            || !matches(message, trigger)) {
             return dedicated
                 && controlSource ? Optional.empty() : Optional.of(message);
         }
@@ -43,9 +40,7 @@ public final class SostenutoTrigger {
             && trigger.invert() ? 127 - message.data2() : message.data2();
         if (trigger.toggle()) {
             boolean wasPressed = pressed[channel];
-            boolean nowPressed = trigger.note() ? message.matchType() == MessageType.NOTE_ON
-                : wasPressed ? value > settings.releaseThreshold()
-                    : value >= settings.activationThreshold();
+            boolean nowPressed = isPressed(message, trigger, value, wasPressed);
             pressed[channel] = nowPressed;
             if (!nowPressed
                 || wasPressed) {
@@ -57,6 +52,25 @@ public final class SostenutoTrigger {
             value = message.matchType() == MessageType.NOTE_ON ? 127 : 0;
         }
         return Optional.of(MidiMessage.shortMessage(0xB0 | channel, 66, value));
+    }
+
+    private static boolean matches(MidiMessage message, Trigger trigger) {
+        if (message.data1() != trigger.number()) {
+            return false;
+        }
+        if (trigger.note()) {
+            return message.type() == MessageType.NOTE_ON
+                || message.type() == MessageType.NOTE_OFF;
+        }
+        return message.type() == MessageType.CC;
+    }
+
+    private boolean isPressed(MidiMessage message, Trigger trigger, int value, boolean wasPressed) {
+        if (trigger.note()) {
+            return message.matchType() == MessageType.NOTE_ON;
+        }
+        return wasPressed ? value > settings.releaseThreshold()
+            : value >= settings.activationThreshold();
     }
 
     public void reset(int channel) {

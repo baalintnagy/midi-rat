@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.midirat.api.EmitterControls;
+import io.midirat.api.EmitterControls.Sequence;
 
 /** Session-local editor state; validation is delegated to the emitter capability. */
 final class SequenceEditor {
@@ -25,9 +26,10 @@ final class SequenceEditor {
     }
 
     void begin(EmitterControls emitter) {
+        Sequence sequence = emitter.snapshot();
         text.setLength(0);
-        text.append(String.join(";", emitter.messages()));
-        format = emitter.format();
+        text.append(String.join(";", sequence.messages()));
+        format = sequence.format();
         active = true;
     }
 
