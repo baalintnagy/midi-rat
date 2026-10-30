@@ -11,6 +11,7 @@ import io.midirat.config.Value;
 import io.midirat.midi.Endpoint;
 import io.midirat.rule.MessageRule;
 import io.midirat.rule.RuleDecoder;
+import io.midirat.sostenuto.SostenutoDecoder;
 
 public final class Builtins {
     private Builtins() {
@@ -37,40 +38,43 @@ public final class Builtins {
                     throw v.error("Chord observer has no settings");
                 }
                 return new ChordModule(new TonalChordRecognizer());
-            }), provider("midi-emitter", ModuleProvider.Role.EMITTER, (v, sources) -> {
-                Map<String, Value> f = v.mapping("format", "messages");
-                return new EmitterModule(f.containsKey("format") ? f.get("format")
-                    .string() : "hex",
-                    f.containsKey("messages") ? f.get("messages")
+            }), provider("sostenuto", ModuleProvider.Role.PROCESSOR,
+                (v, sources) -> new SostenutoModule(SostenutoDecoder.decode(v, sources))),
+                provider("midi-emitter", ModuleProvider.Role.EMITTER, (v, sources) -> {
+                    Map<String, Value> f = v.mapping("format", "messages");
+                    return new EmitterModule(f.containsKey("format") ? f.get("format")
+                        .string() : "hex",
+                        f.containsKey("messages") ? f.get("messages")
+                            .list()
+                            .stream()
+                            .map(Value::string)
+                            .toList() : List.of());
+                }), provider("midi-remap", ModuleProvider.Role.PROCESSOR, (v, sources) -> {
+                    Map<String, Value> f = v.mapping("curves", "rules");
+                    Map<String, Curve> curves = f.containsKey("curves")
+                        ? ActionDecoder.curves(f.get("curves"))
+                        : Map.of();
+                    List<RemapModule.Rule> rules = Value.required(f, "rules", v)
                         .list()
                         .stream()
-                        .map(Value::string)
-                        .toList() : List.of());
-            }), provider("midi-remap", ModuleProvider.Role.PROCESSOR, (v, sources) -> {
-                Map<String, Value> f = v.mapping("curves", "rules");
-                Map<String, Curve> curves = f.containsKey("curves")
-                    ? ActionDecoder.curves(f.get("curves"))
-                    : Map.of();
-                List<RemapModule.Rule> rules = Value.required(f, "rules", v)
-                    .list()
-                    .stream()
-                    .map(r -> {
-                        Map<String, Value> fields = r.mapping("match", "action", "flow");
-                        MessageRule match = RuleDecoder.decode(Value.required(fields, "match", r),
-                            sources);
-                        String flow = fields.containsKey("flow") ? fields.get("flow")
-                            .string() : "stop";
-                        if (!flow.equals("stop")
-                            && !flow.equals("continue")) {
-                            throw r.error("flow must be stop or continue");
-                        }
-                        return new RemapModule.Rule(match, ActionDecoder.decode(
-                            Value.required(fields, "action", r), match.type(), curves),
-                            flow.equals("stop"));
-                    })
-                    .toList();
-                return new RemapModule(rules);
-            }));
+                        .map(r -> {
+                            Map<String, Value> fields = r.mapping("match", "action", "flow");
+                            MessageRule match = RuleDecoder.decode(
+                                Value.required(fields, "match", r),
+                                sources);
+                            String flow = fields.containsKey("flow") ? fields.get("flow")
+                                .string() : "stop";
+                            if (!flow.equals("stop")
+                                && !flow.equals("continue")) {
+                                throw r.error("flow must be stop or continue");
+                            }
+                            return new RemapModule.Rule(match, ActionDecoder.decode(
+                                Value.required(fields, "action", r), match.type(), curves),
+                                flow.equals("stop"));
+                        })
+                        .toList();
+                    return new RemapModule(rules);
+                }));
     }
 
     private static List<MessageRule> rules(Value value, List<Endpoint> sources) {

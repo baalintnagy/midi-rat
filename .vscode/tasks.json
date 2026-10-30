@@ -39,7 +39,7 @@
       "args": [
         "--enable-native-access=ALL-UNNAMED",
         "-jar", "${workspaceFolder}/target/midi-rat-0.1.0-SNAPSHOT.jar",
-        "--config", "${workspaceFolder}/config/application-monitor.yaml"
+        "--config", "${workspaceFolder}/config/wmm-application-monitor.yaml"
       ],
       "dependsOn": "MIDI Rat: build JAR",
       "options": {"cwd": "${workspaceFolder}"},

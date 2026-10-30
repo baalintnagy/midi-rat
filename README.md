@@ -29,11 +29,15 @@ java --enable-native-access=ALL-UNNAMED -jar target/midi-rat-0.1.0-SNAPSHOT.jar 
 java --enable-native-access=ALL-UNNAMED -jar target/midi-rat-0.1.0-SNAPSHOT.jar
 ```
 
-Use `--config path/to/application.yaml` to choose application settings. The example
+Use `--config path/to/wmm-application.yaml` to choose application settings. The example
 network is device-free: its emitter sends to a local bus and monitor only. Bind
-physical devices in `config/application.yaml` after inspecting `--ports`. Exact
+physical devices in `config/wmm-application.yaml` after inspecting `--ports`. Exact
 names are case-sensitive. WinMM and Java Sound enumeration indices are never
 persistent IDs. Select `{id: ...}` only for Windows MIDI Services endpoint/group IDs.
+
+Application examples use `wmm-` for WinMM and `wms-` for Windows MIDI Services,
+for example `wmm-application-monitor.yaml` and `wms-application-monitor.yaml`.
+Backend-independent network files are shared. The default is `wmm-application.yaml`.
 
 The Windows MIDI Services backend needs the matching bridge and SDK DLLs in
 `jna.library.path`/`java.library.path`, and an installed, available Windows MIDI

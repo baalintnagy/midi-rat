@@ -45,7 +45,7 @@ MidiRat/
   app/                  # JARs and required native components
   runtime/              # bundled Java runtime
   config/
-    application.yaml
+    wmm-application.yaml
     network.yaml
   modules/              # external plugin packages
   logs/
@@ -53,7 +53,7 @@ MidiRat/
 
 Packaged application configuration should use `moduleDirectory: ../modules` and
 `networkFile: ./network.yaml` when both YAML files are in `config/`. Paths resolve
-relative to `application.yaml`, not the process working directory. A portable JAR
+relative to `wmm-application.yaml`, not the process working directory. A portable JAR
 distribution must document its equivalent locations and native prerequisites.
 
 The launcher must preserve console interaction for TamboUI and enable the native

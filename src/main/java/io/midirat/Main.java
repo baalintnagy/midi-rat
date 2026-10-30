@@ -93,8 +93,8 @@ public final class Main {
             .getLocation()
             .toURI());
         Path directory = Files.isDirectory(location) ? location : location.getParent();
-        Path packaged = directory.resolve("../config/application.yaml")
+        Path packaged = directory.resolve("../config/wmm-application.yaml")
             .normalize();
-        return Files.isRegularFile(packaged) ? packaged : Path.of("config/application.yaml");
+        return Files.isRegularFile(packaged) ? packaged : Path.of("config/wmm-application.yaml");
     }
 }

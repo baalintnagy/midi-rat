@@ -1,6 +1,6 @@
 # Monitor the current physical inputs
 
-[application-monitor.yaml](../config/application-monitor.yaml) binds all eight
+[wmm-application-monitor.yaml](../config/wmm-application-monitor.yaml) binds all eight
 currently discovered WinMM inputs other than `postSSA` and `postSSB`.
 [network-monitor.yaml](../config/network-monitor.yaml) routes those inputs through
 a filter that blocks every `CLOCK` message. All other messages pass through the
@@ -33,13 +33,13 @@ From the repository directory, run the already-built JAR with the installed JDK 
 
 ```powershell
 Set-Location C:\develop\gitrepos\midi-rat
-& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\application-monitor.yaml
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\wmm-application-monitor.yaml
 ```
 
 Alternatively, use the packaged launcher and its bundled Java runtime:
 
 ```powershell
-.\target\jpackage-out\MidiRat\MidiRat.exe --config .\config\application-monitor.yaml
+.\target\jpackage-out\MidiRat\MidiRat.exe --config .\config\wmm-application-monitor.yaml
 ```
 
 Run these in an interactive terminal. Monitor controls: `p` pause/resume, `c` clear,
@@ -64,7 +64,7 @@ the terminal's plain-color fallback disable it.
 To validate the files without opening devices or starting the UI:
 
 ```powershell
-& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\application-monitor.yaml --validate
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\wmm-application-monitor.yaml --validate
 ```
 
 To rebuild the JAR without invoking native/app-image packaging:
@@ -92,7 +92,7 @@ because it does not accept interactive terminal input.
 
 ## Windows MIDI Services monitor
 
-[application-monitor-services.yaml](../config/application-monitor-services.yaml)
+[wms-application-monitor.yaml](../config/wms-application-monitor.yaml)
 selects `windows-midi-services`. It binds the current machine's eight physical
 input/group ports by their discovered stable IDs: Hammer 88 Pro groups 1–4,
 Launchpad Pro MK3 groups 1–3, and MOTU M Series MIDI group 1. `postSSA` and `postSSB`
@@ -102,7 +102,7 @@ monitor history, and color settings.
 Stop the running WinMM application and start the Services configuration:
 
 ```powershell
-.\target\jpackage-out\MidiRat\MidiRat.exe --config .\config\application-monitor-services.yaml
+.\target\jpackage-out\MidiRat\MidiRat.exe --config .\config\wms-application-monitor.yaml
 ```
 
 Inspect the native endpoint/group IDs with the same command plus `--ports`.

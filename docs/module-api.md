@@ -21,7 +21,12 @@ decode YAML or perform filesystem/UI work.
 `ModuleContext.publish(Endpoint, List<MidiMessage>)` permits asynchronous generation
 only after start and activation and only to the instance's declared destinations.
 Synchronous transformations should return results from `process` to retain receipt
-time. `ModuleContext.report(String)` queues diagnostics; `report(ModuleError)` also
+time. `ModuleContext.forward(Envelope, List<MidiMessage>)` supports delayed processing
+results: it fans out to declared destinations in message order, retaining the input's
+origin/display name and receipt time. The input source must be subscribed and the
+route must still be active; removed routes cannot publish late work. Its default
+implementation throws for compatibility with older custom contexts.
+`ModuleContext.report(String)` queues diagnostics; `report(ModuleError)` also
 accepts a diagnostic code and immutable context attributes. `widgetLines()` supplies
 text to host rendering; use bounded nonblocking handoff. `close()` releases owned
 resources without generating MIDI cleanup or blocking indefinitely.
@@ -35,13 +40,16 @@ Receipt time remains relative to host start. The three-argument constructor init
 origin to source (and its display name to that alias), and `forward()` preserves both.
 Newly generated bus traffic starts
 with that bus as origin; plugins forwarding input should return processing results
-to retain provenance rather than publish it as an unrelated generated sequence.
+or use `context.forward` for delayed results to retain provenance.
 `MidiMessage` defensively copies bytes and carries actual length, never display padding.
 
 Optional `emitterControls()` and `monitorControls()` expose narrow capabilities;
+the host/UI do not inspect concrete module implementations.
 `ModuleContext.sourceNames()` supplies immutable host-resolved origin display names
 and the instance's immediate source aliases at startup for presentation sizing.
-the host/UI do not inspect concrete module implementations. `widget()` returns a
+`ModuleContext.originEndpoints()` supplies immutable logical input/bus endpoints
+known to the network, for validating origin selectors before activation.
+`widget()` returns a
 `ModuleWidget` with rendering, color preference, and elastic-height policy. Its
 default adapter still calls legacy `widgetLines()`, so existing providers retain
 their fixed-height behavior without implementing the new optional methods.

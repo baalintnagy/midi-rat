@@ -33,6 +33,7 @@ Section 15 collects them and identifies release measurements still to be establi
 | MIDI-Message-Filter | Stateless whitelist/blacklist processing and pass-through wiring. |
 | MIDI-Monitor | Observe messages in a terminal widget. |
 | MIDI-Chord | Display chord names for held notes combined across subscribed inputs. |
+| Sostenuto | Emulate sustain/sostenuto pedal ownership and optional retrigger protection. |
 | MIDI-Emitter | Send user-entered MIDI messages and sequences. |
 | MIDI-Remap | Channel, note, controller, curve, cross-type, substitution, and CC-trigger transformations. |
 | Host panic | Explicit panic on all internal buses and physical outputs. |
@@ -60,6 +61,10 @@ emitted-note ledger. Reload discards that state without generating corrective me
 **[User addition, 30 October 2026]** The `midi-chord` observer maintains local held
 input-note state solely for chord naming. Origin and immediate source do not partition
 this state. The host/remap prohibition and absence of automatic corrective output remain.
+
+**[User addition, 30 October 2026]** The `sostenuto` processor retains the bounded
+input-note and pedal ownership state required for its explicit emulation behavior.
+This exception does not permit general host/remap ledgers or lifecycle MIDI cleanup.
 
 ## 2. Technology and system structure
 
@@ -110,12 +115,19 @@ third-party notices. Follow [AGENTS.md](AGENTS.md),
 
 Use two independently versioned YAML documents:
 
-- `application.yaml`: backend choice, host paths/settings, physical port bindings,
+- Application YAML: backend choice, host paths/settings, physical port bindings,
   and the selected network file.
 - `network.yaml`: buses and configured module instances.
 
 The network references logical port aliases and remains portable across machines
 whose application files bind those aliases to different devices.
+
+**[User naming decision, 30 October 2026]** Prefix backend-specific application
+examples with `wmm-` for WinMM and `wms-` for Windows MIDI Services. Remove the
+former `-services` suffix. For example, use `wmm-application-monitor.yaml` and
+`wms-application-monitor.yaml`. Shared network files remain backend-independent.
+The default application file is `config/wmm-application.yaml`, including in the
+packaged image; update launch configurations and runnable documentation accordingly.
 
 ### 3.1 Application DSL
 
@@ -193,7 +205,7 @@ is required. Host-owned handle sharing among MIDI Rat instances does not imply
 ownership or isolation of the receiving instrument's state.
 
 All relative paths resolve against the YAML file declaring them, never the current
-working directory. In a packaged `config/application.yaml`, `../modules` refers
+working directory. In a packaged `config/wmm-application.yaml`, `../modules` refers
 to the distribution's top-level plugin directory.
 
 ### 3.2 Backend requirements
@@ -1053,6 +1065,98 @@ invalid thresholds, impossible output values, or malformed substitution messages
 Compile/validate configured message sequences and curve lookups at load time, not
 while processing incoming MIDI.
 
+### 10.10 Sostenuto processor
+
+**[User addition, 30 October 2026]** Register `sostenuto` as a processor with sources,
+destinations, and YAML settings. Maintain independent state per MIDI channel and
+pitch, combining origins and subscribed sources after control-input selection.
+Pass ordinary MIDI unchanged. Consume emulated sustain CC64 and sostenuto CC66.
+Sustain engages at 64; sostenuto engages at the configured activation threshold
+and releases at or below `max(0, activationThreshold - hysteresis)`.
+
+On sostenuto engagement, latch currently pressed notes and notes already retained
+by sustain. Later notes are not latched by repeated engagement values. Defer note-offs
+while either pedal owns the note; hand retained releases between the two pedals
+without releasing them. Forward unretained releases unchanged, including velocity-zero
+note-ons. Pedal releases generate explicit note-offs with velocity zero, in pitch order,
+only for deferred notes no longer pressed or owned. Pressed state is boolean per
+channel/pitch, matching piano-key behavior; overlapping presses are not paired FIFO/LIFO.
+
+**[Design completion D16]** The MIDI Rat settings are:
+
+```yaml
+- name: piano-pedals
+  type: sostenuto
+  sources: [keys, pedals, performance]
+  destinations: [processed]
+  settings:
+    controlSources: [pedals]
+    trigger: {cc: 22, toggle: false, invert: false}
+    activationThreshold: 10
+    hysteresis: 2
+    umbrella: {enabled: false, delayMs: 1, tailMs: 1}
+```
+
+All fields are optional; `settings: {}` uses the shown defaults, with no dedicated
+control sources. `controlSources`, when present, is a nonempty unique list of the
+module's subscriptions. Only matching triggers from these sources are processed;
+other messages from those sources are consumed. Other subscriptions remain primary
+inputs, including ordinary native CC66. Without a control selector, any source may
+supply the configured trigger. Select `trigger.cc` or `trigger.note`, never both;
+CC defaults to 22. Numbers are 0..127. `toggle` defaults false. `invert` defaults
+false and applies only to CC input (`127 - value` before thresholding).
+
+A momentary note trigger consumes positive note-on as CC66=127, and note-off or
+velocity-zero note-on as CC66=0. Toggle mode changes once per press edge; releases
+re-arm it, and repeated press values do not toggle again. CC toggle edges use the
+same activation/release thresholds. Trigger state is independent per channel.
+`activationThreshold` is 1..127 and `hysteresis` is 0..127. Unknown fields and invalid
+settings reject preparation. Use existing filter/remap modules for channel selection,
+output-channel mapping, and other transformations.
+
+When enabled, umbrella mode protects a note-on whose pitch is retained or latched
+on that channel: send CC64=127, delay its note-on by `delayMs`, then send CC64=0
+after `tailMs`. Overlapping pulses share per-channel depth so only the first sends
+pedal-down and the last sends pedal-up. Both timing values are 0..60000 milliseconds;
+they are scheduler requests, not hard real-time guarantees. Bound outstanding timers
+to 4096. On saturation, report a diagnostic and pass the retrigger without scheduling
+new protection. Serialize pulse publications and preserve input origin, source
+metadata, and receipt time through the host's delayed-forwarding API. If a release
+would precede its scheduled note-on, cancel that pending retrigger before forwarding
+the release, ending its pulse when no overlapping protection remains.
+
+**Deliberate adaptation:** Incoming CC120/CC123 clears that channel's emulation and
+trigger state and is forwarded unchanged; CC121 releases only that channel's deferred
+unpressed notes, resets its pedals/trigger state, preserves pressed keys, and is
+forwarded. These explicit messages cancel its pending umbrella work and end an
+active pulse. They do not invoke global panic. To receive explicit host Panic, include
+an internal bus among sources; the supplied demos use `musical-input` for this.
+Reload, removal, and shutdown cancel scheduled work and discard local state silently,
+without pedal resets, note-offs, or implicit panic. Delayed publications from an
+inactive/removed route must be rejected by the host.
+
+**[User example addition, 30 October 2026]** Supply both a Hammer keyboard/CC22
+momentary-control example and a Hammer keyboard/Launchpad note-78 toggle-control
+example, each with WinMM and Windows MIDI Services application configurations.
+The Launchpad example uses `launchpad-main` as its dedicated control origin and
+`trigger: {note: 78, toggle: true, invert: false}`. In both networks all eight
+configured inputs (excluding loopback inputs `postSSA` and `postSSB`) feed one
+musical-message filter. Whitelist NOTE, CC, P_BEND, CH_PR, POLY_AT, and PC; exclude
+CLOCK, SysEx, transport, and other system messages. Both monitor and sostenuto
+subscribe to its `musical-input` bus. The chord observer subscribes directly to
+`sostenuto-output`; the processor also sends its output to physical `postSSB`.
+Bind this output by exact name for WinMM and discovered stable endpoint/group ID
+for Windows MIDI Services.
+
+**[Design completion D17]** To retain dedicated controller identity through a shared
+filtered bus, support `controlOrigins: [launchpad-main]` (or `[hammer-midi-3]` in
+the CC22 example). Select either `controlOrigins` or `controlSources`, never both.
+Origin selectors compare original logical endpoint aliases, not hardware display
+names or the immediate bus. Require a nonempty unique list; at startup validate
+each alias against `ModuleContext.originEndpoints()` before activation. Other messages
+from a selected control origin are consumed, matching dedicated-source behavior.
+Existing rule-level source matching remains based on the immediate source.
+
 ## 11. Host panic
 
 The terminal host must expose an explicit Panic action covering every internal bus.
@@ -1181,7 +1285,7 @@ MidiRat/
   app/
   runtime/
   config/
-    application.yaml
+    wmm-application.yaml
     network.yaml
   modules/
   logs/

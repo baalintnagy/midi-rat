@@ -1,0 +1,50 @@
+schemaVersion: 1
+network:
+  buses: [musical-input, sostenuto-output]
+  modules:
+    - name: musical-inputs
+      type: midi-message-filter
+      sources:
+        - hammer-main
+        - hammer-midi-2
+        - hammer-midi-3
+        - hammer-midi-4
+        - motu
+        - launchpad-main
+        - launchpad-midi-2
+        - launchpad-midi-3
+      destinations: [musical-input]
+      settings:
+        whitelist:
+          - type: NOTE
+          - type: CC
+          - type: P_BEND
+          - type: CH_PR
+          - type: POLY_AT
+          - type: PC
+    - name: input-monitor
+      type: midi-monitor
+      sources: [musical-input]
+      settings:
+        historyLimit: 2000
+        colors: true
+    - name: piano-pedals
+      type: sostenuto
+      sources: [musical-input]
+      destinations: [sostenuto-output, postSSB]
+      settings:
+        controlOrigins: [hammer-midi-3]
+        trigger:
+          cc: 22
+          toggle: false
+          invert: false
+        activationThreshold: 10
+        hysteresis: 2
+        umbrella:
+          enabled: true
+          delayMs: 1
+          tailMs: 1
+    - name: sounding-chord
+      type: midi-chord
+      sources: [sostenuto-output]
+      settings: {}

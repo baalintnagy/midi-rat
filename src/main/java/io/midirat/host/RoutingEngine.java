@@ -239,6 +239,15 @@ public final class RoutingEngine implements AutoCloseable {
             instance.module()
                 .start(new ModuleContext() {
                     @Override
+                    public List<Endpoint> originEndpoints() {
+                        return config.endpoints()
+                            .values()
+                            .stream()
+                            .filter(endpoint -> endpoint.kind() != Endpoint.Kind.OUTPUT)
+                            .toList();
+                    }
+
+                    @Override
                     public SourceNames sourceNames() {
                         return new SourceNames(originNames,
                             instance.sources()
@@ -258,6 +267,24 @@ public final class RoutingEngine implements AutoCloseable {
                         }
                         RoutingEngine.this.publish(destination, messages,
                             System.nanoTime() - origin);
+                    }
+
+                    @Override
+                    public void forward(Envelope input, List<MidiMessage> messages) {
+                        if (!started
+                            || !running
+                            || !active
+                            || !instance.sources()
+                                .contains(input.source())) {
+                            throw new IllegalStateException(
+                                "Inactive instance or undeclared source");
+                        }
+                        for (MidiMessage message : messages) {
+                            for (Endpoint destination : instance.destinations()) {
+                                RoutingEngine.this.publish(destination, List.of(message),
+                                    input.receiptNanos(), input.origin(), input.originName());
+                            }
+                        }
                     }
 
                     @Override

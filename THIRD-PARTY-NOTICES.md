@@ -4,6 +4,10 @@ The executable JAR retains dependency license and notice resources. Distribution
 must include this notice and the notices shipped in the bundled Temurin runtime.
 The MIDI Rat project's own license remains undecided.
 
+The adapted sostenuto processing includes work copyright (c) 2025 Balint Nagy,
+under the MIT license. Its complete notice is retained in the application JAR at
+`META-INF/third-party/sostenuto/LICENSE`.
+
 | Component | Version | License / upstream |
 | --- | --- | --- |
 | TamboUI | 0.6.0 | MIT, https://github.com/tamboui/tamboui |

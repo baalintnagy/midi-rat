@@ -1,6 +1,7 @@
 package io.midirat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -9,7 +10,9 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.midirat.api.ModuleContext;
 import io.midirat.api.ModuleInstance;
 import io.midirat.config.NetworkConfig;
 import io.midirat.config.NetworkConfig.Instance;
@@ -22,6 +25,61 @@ import io.midirat.module.FilterModule;
 import org.junit.jupiter.api.Test;
 
 class RoutingTest {
+    @Test
+    void delayedForwardingRetainsProvenanceAndStopsWhenItsRouteIsRemoved() throws Exception {
+        var input = new Endpoint("input", Endpoint.Kind.INPUT);
+        var bus = new Endpoint("bus", Endpoint.Kind.BUS);
+        var context = new AtomicReference<ModuleContext>();
+        var accepted = new CountDownLatch(1);
+        var delivered = new CountDownLatch(1);
+        var received = new AtomicReference<Envelope>();
+        ModuleInstance delay = new ModuleInstance() {
+            @Override
+            public void start(ModuleContext value) {
+                context.set(value);
+            }
+
+            @Override
+            public List<MidiMessage> process(Envelope message) {
+                accepted.countDown();
+                return List.of();
+            }
+        };
+        ModuleInstance observer = message -> {
+            received.set(message);
+            delivered.countDown();
+            return List.of();
+        };
+        var config = new NetworkConfig(Map.of("input", input, "bus", bus), List.of(
+            new Instance("delay", "delayed", List.of(input), List.of(bus), delay),
+            new Instance("observer", "monitor", List.of(bus), List.of(), observer)));
+        var original = new Envelope(input, 123, MidiMessage.shortMessage(0x90, 60, 100),
+            input, "Hardware keyboard");
+        try (var engine = new RoutingEngine(config, (_, _, _) -> {
+        }, _ -> {
+        }, 0)) {
+            engine.prepare();
+            engine.activate();
+            engine.receive(original);
+            assertTrue(accepted.await(2, TimeUnit.SECONDS));
+            context.get()
+                .forward(original, List.of(original.message()));
+            assertTrue(delivered.await(2, TimeUnit.SECONDS));
+            assertEquals(bus, received.get()
+                .source());
+            assertEquals(input, received.get()
+                .origin());
+            assertEquals("Hardware keyboard", received.get()
+                .originName());
+            assertEquals(123, received.get()
+                .receiptNanos());
+            engine.removeType("delayed");
+            assertThrows(IllegalStateException.class,
+                () -> context.get()
+                    .forward(original, List.of(original.message())));
+        }
+    }
+
     @Test
     void emitterUsesMessageThenDestinationOrder() {
         var first = new Endpoint("first", Endpoint.Kind.OUTPUT);
