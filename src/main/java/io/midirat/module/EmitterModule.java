@@ -1,14 +1,21 @@
 package io.midirat.module;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import io.midirat.api.EmitterControls;
 import io.midirat.api.ModuleInstance;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MessageCodec;
 import io.midirat.midi.MidiMessage;
 
-public final class EmitterModule implements ModuleInstance {
+public final class EmitterModule implements ModuleInstance, EmitterControls {
+    @Override
+    public Optional<EmitterControls> emitterControls() {
+        return Optional.of(this);
+    }
+
     private String format;
     private List<String> messages;
 

@@ -3,11 +3,13 @@ package io.midirat.ui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import dev.tamboui.terminal.Backend;
 import dev.tamboui.terminal.BackendFactory;
@@ -17,11 +19,11 @@ import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.text.Text;
 import dev.tamboui.widgets.paragraph.Paragraph;
+import io.midirat.api.ModuleWidget;
+import io.midirat.api.MonitorControls;
 import io.midirat.config.NetworkConfig.Instance;
 import io.midirat.host.Diagnostics;
 import io.midirat.host.Host;
-import io.midirat.module.EmitterModule;
-import io.midirat.module.MonitorModule;
 
 /** UI rendering and keyboard handling stay on this thread; host commands use a control worker. */
 public final class Workspace {
@@ -35,9 +37,7 @@ public final class Workspace {
             .factory());
     private int focused;
     private String copied = "";
-    private boolean editing;
-    private final StringBuilder editor = new StringBuilder();
-    private String editorFormat = "hex";
+    private final SequenceEditor editor = new SequenceEditor();
     private final boolean colorTerminal = !"dumb".equals(System.getenv("TERM"))
         && System.getenv("NO_COLOR") == null;
 
@@ -82,7 +82,7 @@ public final class Workspace {
                     running = false;
                     continue;
                 }
-                if (editing) {
+                if (editor.active()) {
                     editKey(key);
                     continue;
                 }
@@ -107,44 +107,33 @@ public final class Workspace {
                     }
                 }
                 case 'e' -> {
-                    if (selected != null
-                        && selected.module() instanceof EmitterModule emitter) {
-                        editing = true;
-                        editor.setLength(0);
-                        editor.append(String.join(";", emitter.messages()));
-                        editorFormat = emitter.format();
+                    if (selected != null) {
+                        selected.module()
+                            .emitterControls()
+                            .ifPresent(editor::begin);
                     }
                 }
                 case 'p' -> {
-                    if (selected != null
-                        && selected.module() instanceof MonitorModule monitor) {
-                        monitor.togglePause();
-                    }
+                    monitorAction(selected, MonitorControls::togglePause);
                 }
                 case 'c' -> {
-                    if (selected != null
-                        && selected.module() instanceof MonitorModule monitor) {
-                        monitor.clear();
-                    }
+                    monitorAction(selected, MonitorControls::clear);
                 }
                 case 'd' -> {
-                    if (selected != null
-                        && selected.module() instanceof MonitorModule monitor) {
-                        monitor.toggleDetails();
-                    }
+                    monitorAction(selected, MonitorControls::toggleDetails);
                 }
                 case 'y' -> {
-                    if (selected != null
-                        && selected.module() instanceof MonitorModule monitor) {
+                    monitorAction(selected, monitor -> {
                         copied = monitor.copy();
                         diagnostics.accept("Copied message to workspace paste buffer");
-                    }
+                    });
                 }
                 case 'v' -> {
                     if (selected != null
-                        && selected.module() instanceof EmitterModule emitter
                         && !copied.isEmpty()) {
-                        emitter.edit("message-text", List.of(copied));
+                        selected.module()
+                            .emitterControls()
+                            .ifPresent(emitter -> emitter.edit("message-text", List.of(copied)));
                     }
                 }
                 default -> {
@@ -171,6 +160,15 @@ public final class Workspace {
         void run() throws Exception;
     }
 
+    private static void monitorAction(Instance instance,
+        Consumer<MonitorControls> action) {
+        if (instance != null) {
+            instance.module()
+                .monitorControls()
+                .ifPresent(action);
+        }
+    }
+
     private void command(Command command) {
         try {
             controls.execute(() -> {
@@ -186,38 +184,19 @@ public final class Workspace {
     }
 
     private void editKey(int key) {
-        if (key == 27) {
-            editing = false;
+        if (key != 10
+            && key != 13) {
+            editor.accept(key, Optional.empty());
             return;
         }
-        if (key == 20) {
-            editorFormat = editorFormat.equals("hex") ? "message-text" : "hex";
-            return;
-        }
-        if (key == 10
-            || key == 13) {
-            try {
-                List<Instance> instances = host.instances();
-                if (!instances.isEmpty()
-                    && instances.get(Math.floorMod(focused, instances.size()))
-                        .module() instanceof EmitterModule emitter) {
-                    emitter.edit(editorFormat, editor.isEmpty() ? List.of()
-                        : List.of(editor.toString()
-                            .split(";", -1)));
-                }
-                editing = false;
-            } catch (IllegalArgumentException exception) {
-                diagnostics.accept(exception.getMessage());
-            }
-        } else if (key == 127
-            || key == 8) {
-            if (!editor.isEmpty()) {
-                editor.deleteCharAt(editor.length() - 1);
-            }
-        } else if (key >= 32
-            && key <= 126
-            && editor.length() < 2_000_000) {
-            editor.append((char) key);
+        try {
+            List<Instance> instances = host.instances();
+            editor.accept(key, instances.isEmpty() ? Optional.empty()
+                : instances.get(Math.floorMod(focused, instances.size()))
+                    .module()
+                    .emitterControls());
+        } catch (IllegalArgumentException exception) {
+            diagnostics.accept(exception.getMessage());
         }
     }
 
@@ -237,49 +216,79 @@ public final class Workspace {
         if (!instances.isEmpty()) {
             focused = Math.floorMod(focused, instances.size());
         }
+        int height = frame.area()
+            .height();
+        List<String> recent = diagnostics.recent();
+        List<List<String>> widgetRows = new ArrayList<>();
+        int monitorCount = 0;
+        int otherRows = 0;
+        for (Instance instance : instances) {
+            if (instance.module()
+                .widget()
+                .elastic()) {
+                monitorCount++;
+                widgetRows.add(List.of());
+            } else {
+                List<String> rows = instance.module()
+                    .widget()
+                    .lines(height);
+                otherRows += rows.size();
+                widgetRows.add(rows);
+            }
+        }
+        int footerRows = 1 + Math.min(4, recent.size()) + (editor.active() ? 2 : 0)
+            + (copied.isEmpty() ? 0 : 1);
+        int monitorLines = monitorCount == 0 ? 1
+            : Math.max(1,
+                (height - lines.size() - instances.size() - otherRows - footerRows) / monitorCount);
         for (int i = 0; i < instances.size(); i++) {
             Instance instance = instances.get(i);
             lines.add(Line.from(Span.raw("%s %s (%s)".formatted(i == focused ? ">" : " ",
                 instance.name(), instance.type()))
                 .bold()));
+            ModuleWidget widget = instance.module()
+                .widget();
             boolean colors = colorTerminal
-                && (!(instance.module() instanceof MonitorModule m)
-                    || m.colors());
-            for (String row : instance.module()
-                .widgetLines()) {
+                && widget.colors();
+            List<String> rows = widget.elastic()
+                ? widget.lines(monitorLines)
+                : widgetRows.get(i);
+            for (String row : rows) {
                 lines.add(MonitorRowStyle.render(row, colors));
             }
         }
-        if (editing) {
+        if (editor.active()) {
             lines.add(Line.from(
                 "EDIT %s (semicolon separates messages; Ctrl+T format, Enter accept, Esc cancel)"
-                    .formatted(editorFormat)));
-            lines.add(Line.from(editor.toString()));
+                    .formatted(editor.format())));
+            lines.add(Line.from(editor.text()));
         }
         if (!copied.isEmpty()) {
             lines.add(Line.from("Copy: %s".formatted(copied)));
         }
         lines.add(Line.from("Diagnostics (log queue loss %d)".formatted(diagnostics.lost())));
-        List<String> recent = diagnostics.recent();
         recent.stream()
             .skip(Math.max(0, recent.size() - 4))
             .forEach(s -> lines.add(Line.from(s)));
         // Keep status/controls and the focused widget visible on small terminals.
-        int height = frame.area()
-            .height();
         if (lines.size() > height
             && !instances.isEmpty()) {
             List<Line> compact = new ArrayList<>(lines.subList(0, Math.min(3, lines.size())));
             Instance selected = instances.get(focused);
             compact.add(Line.from("> %s (%s)".formatted(selected.name(), selected.type())));
-            selected.module()
-                .widgetLines()
+            int compactBudget = Math.max(1,
+                height - compact.size() - Math.min(2, recent.size()) - (editor.active() ? 1 : 0));
+            ModuleWidget selectedWidget = selected.module()
+                .widget();
+            List<String> selectedRows = selectedWidget.elastic()
+                ? selectedWidget.lines(compactBudget)
+                : widgetRows.get(focused);
+            selectedRows.stream()
                 .forEach(s -> compact.add(MonitorRowStyle.render(s,
                     colorTerminal
-                        && (!(selected.module() instanceof MonitorModule monitor)
-                            || monitor.colors()))));
-            if (editing) {
-                compact.add(Line.from(editor.toString()));
+                        && selectedWidget.colors())));
+            if (editor.active()) {
+                compact.add(Line.from(editor.text()));
             }
             recent.stream()
                 .skip(Math.max(0, recent.size() - 2))

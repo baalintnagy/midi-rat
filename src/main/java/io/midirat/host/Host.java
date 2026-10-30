@@ -15,6 +15,7 @@ import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import io.midirat.api.EmitterControls;
 import io.midirat.api.ModuleProvider;
 import io.midirat.backend.MidiBackend;
 import io.midirat.config.ApplicationConfig;
@@ -23,7 +24,6 @@ import io.midirat.config.NetworkConfig;
 import io.midirat.config.NetworkConfig.Instance;
 import io.midirat.config.Value;
 import io.midirat.midi.MidiMessage;
-import io.midirat.module.EmitterModule;
 
 public final class Host implements AutoCloseable {
     private final ApplicationConfig app;
@@ -89,7 +89,8 @@ public final class Host implements AutoCloseable {
                     .close());
             throw new IOException("Network changed during reload; retry");
         }
-        RoutingEngine candidate = new RoutingEngine(config, devices::send, diagnostics, origin);
+        RoutingEngine candidate = new RoutingEngine(config, devices::send, diagnostics, origin,
+            devices.inputNames());
         candidate.prepare();
         RoutingEngine old = engine;
         candidate.activate();
@@ -122,16 +123,16 @@ public final class Host implements AutoCloseable {
     }
 
     public synchronized void send(Instance instance) {
-        if (!(instance.module() instanceof EmitterModule emitter)) {
-            throw new IllegalArgumentException("Select an emitter");
-        }
+        EmitterControls emitter = instance.module()
+            .emitterControls()
+            .orElseThrow(() -> new IllegalArgumentException("Select an emitter"));
         engine.emit(instance.name(), emitter.compile());
     }
 
     public synchronized void save(Instance instance) throws IOException {
-        if (!(instance.module() instanceof EmitterModule emitter)) {
-            throw new IllegalArgumentException("Select an emitter");
-        }
+        EmitterControls emitter = instance.module()
+            .emitterControls()
+            .orElseThrow(() -> new IllegalArgumentException("Select an emitter"));
         persisted = EmitterPersistence.save(app.network(), persisted, instance.name(), emitter);
         diagnostics.accept("Saved emitter %s".formatted(instance.name()));
     }

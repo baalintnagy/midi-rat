@@ -605,7 +605,7 @@ resume continues with current traffic rather than replaying an unbounded backlog
 | Type | Explicit channel/system type names from Section 6.1. |
 | `D1`, `D2` | Decimal raw data-byte fields. |
 | `Status` | Full decimal status byte, including channel bits. |
-| Source | Immediate input/bus identity in square brackets. |
+| Origin / Immediate | Unlabeled hardware-origin name then immediate input/bus alias, without wrapping brackets. |
 | Time | Grouped-digit monotonic host receipt time labelled `ns`. |
 
 ```text
@@ -620,9 +620,28 @@ Expanded fields decode note/controller/pressure/program/bend/system values where
 applicable. SysEx details show actual length and raw bytes, with explicitly marked
 truncated previews; truncating the view must not truncate routed payloads.
 
+**[User decision D14]** Preserve the original input endpoint alongside the immediate
+source when forwarding through buses and processing modules. Show the original input
+in the first source column using its discovered hardware display name, and show the
+immediate input/bus alias in the next column. These columns have no repeated text
+labels. Expanded details also retain `via`. Subscription and rule `sources`
+matching still uses only the immediate
+source. Newly generated emitter, host, or asynchronous plugin traffic starts with
+its first published bus as origin. No message-pairing or note ledger is involved.
+
+Source column widths are fixed at startup from host-resolved device and network
+names, rather than growing as messages arrive. Reload recomputes them. Pad shorter
+names and ellipsize unexpected longer names. Display the 13 least significant
+nanosecond digits, zero-padded and grouped with spaces, retaining full timestamps
+internally. Use an 11-character type column with these monitor-only abbreviations:
+`CONTINUE` → `CONT`, `TIME_CODE` → `TC`, `SONG_POSITION` → `SONG_POS`,
+`SONG_SELECT` → `SONG_SEL`, `TUNE_REQUEST` → `TUNE_REQ`,
+`ACTIVE_SENSING` → `ACT_SEN`, and `SYSTEM_RESET` → `SYS_RES`.
+Configuration type names remain unchanged.
+
 **[Design completion D06]** Display host receipt time relative to process start.
 Keep the original receipt timestamp when a message traverses internal buses, and
-show immediate source separately. Render-time timestamps must not replace receipt
+show immediate source separately in expanded details. Render-time timestamps must not replace receipt
 time. Copy-message strips source/time/colors and emits the syntax in Section 9.
 
 ## 8. MIDI-Emitter DSL
@@ -1224,6 +1243,7 @@ The following additions resolve details not previously specified exactly:
 | D11 | Concrete remap actions/schema and default stop flow. |
 | D12 | Exact all-channel panic sequence and direct physical-output path. |
 | D13 | ServiceLoader plugin discovery. |
+| D14 | User-requested origin display: preserve original input across buses; keep rule source matching immediate. |
 
 Before declaring a stable release, establish measured latency/jitter targets,
 sustained/burst workloads, queue capacities, maximum SysEx size/assembly timeout,

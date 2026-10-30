@@ -30,6 +30,11 @@
 
 ## Engineering principles
 
+- Prefer narrow capability interfaces and polymorphic dispatch over concrete module
+  `instanceof` checks in host and UI code. Keep parsing-boundary shape checks, equality
+  checks, and exhaustive sealed-domain matching where they express the actual contract.
+  Do not replace legitimate checks with reflection, casts, or speculative abstractions.
+
 - Follow clean-code and SOLID principles. Keep MIDI domain behavior separate from
   device access, terminal presentation, filesystem watching, and configuration.
 - Prefer established third-party libraries when appropriate. Use supported framework

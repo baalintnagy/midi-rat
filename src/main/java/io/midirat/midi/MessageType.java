@@ -7,7 +7,10 @@ public enum MessageType {
     SYSEX_START, SYSEX_END, OTHER;
 
     public boolean channel() {
-        return ordinal() <= PC.ordinal();
+        return switch (this) {
+        case NOTE, NOTE_ON, NOTE_OFF, CC, P_BEND, CH_PR, POLY_AT, PC -> true;
+        default -> false;
+        };
     }
 
     public int length() {

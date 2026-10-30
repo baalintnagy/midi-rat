@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
 import io.midirat.api.ModuleContext;
+import io.midirat.api.SourceNames;
 import io.midirat.config.NetworkConfig;
 import io.midirat.config.NetworkConfig.Instance;
 import io.midirat.midi.Endpoint;
@@ -34,13 +35,25 @@ public final class RoutingEngine implements AutoCloseable {
     private final long origin;
     private final Map<String, Route> routes = new ConcurrentHashMap<>();
     private volatile boolean active;
+    private final List<String> originNames;
 
     public RoutingEngine(NetworkConfig config, Output output, Consumer<String> errors,
         long origin) {
+        this(config, output, errors, origin, Map.of());
+    }
+
+    public RoutingEngine(NetworkConfig config, Output output, Consumer<String> errors,
+        long origin, Map<Endpoint, String> inputNames) {
         this.config = config;
         this.output = output;
         this.errors = errors;
         this.origin = origin;
+        originNames = config.endpoints()
+            .values()
+            .stream()
+            .filter(endpoint -> endpoint.kind() != Endpoint.Kind.OUTPUT)
+            .map(endpoint -> inputNames.getOrDefault(endpoint, endpoint.name()))
+            .toList();
     }
 
     public NetworkConfig config() {
@@ -105,11 +118,16 @@ public final class RoutingEngine implements AutoCloseable {
     }
 
     private void publish(Endpoint destination, List<MidiMessage> messages, long receipt) {
+        publish(destination, messages, receipt, destination, destination.name());
+    }
+
+    private void publish(Endpoint destination, List<MidiMessage> messages, long receipt,
+        Endpoint messageOrigin, String originName) {
         if (destination.kind() == Endpoint.Kind.OUTPUT) {
             output.send(destination, messages, receipt);
         } else if (destination.kind() == Endpoint.Kind.BUS) {
             for (MidiMessage message : messages) {
-                receive(new Envelope(destination, receipt, message));
+                receive(new Envelope(destination, receipt, message, messageOrigin, originName));
             }
         } else {
             throw new IllegalArgumentException("Cannot publish to an input");
@@ -221,6 +239,15 @@ public final class RoutingEngine implements AutoCloseable {
             instance.module()
                 .start(new ModuleContext() {
                     @Override
+                    public SourceNames sourceNames() {
+                        return new SourceNames(originNames,
+                            instance.sources()
+                                .stream()
+                                .map(Endpoint::name)
+                                .toList());
+                    }
+
+                    @Override
                     public void publish(Endpoint destination, List<MidiMessage> messages) {
                         if (!started
                             || !active
@@ -273,7 +300,8 @@ public final class RoutingEngine implements AutoCloseable {
                     for (MidiMessage message : result) {
                         for (Endpoint destination : instance.destinations()) {
                             try {
-                                publish(destination, List.of(message), envelope.receiptNanos());
+                                publish(destination, List.of(message), envelope.receiptNanos(),
+                                    envelope.origin(), envelope.originName());
                             } catch (RuntimeException exception) {
                                 errors.accept(exception.getMessage());
                             }

@@ -28,8 +28,23 @@ resources without generating MIDI cleanup or blocking indefinitely.
 
 The host owns subscription registration, physical handles, publication, queues,
 and terminal scheduling. Plugins must not open host backend implementations.
-`Envelope` carries immediate source and receipt time relative to host start.
+`Envelope.source()` carries the immediate source used by subscriptions and rule
+matching; `origin()` preserves the initial input endpoint across processing/buses.
+`originName()` preserves its discovered hardware display name for presentation.
+Receipt time remains relative to host start. The three-argument constructor initializes
+origin to source (and its display name to that alias), and `forward()` preserves both.
+Newly generated bus traffic starts
+with that bus as origin; plugins forwarding input should return processing results
+to retain provenance rather than publish it as an unrelated generated sequence.
 `MidiMessage` defensively copies bytes and carries actual length, never display padding.
+
+Optional `emitterControls()` and `monitorControls()` expose narrow capabilities;
+`ModuleContext.sourceNames()` supplies immutable host-resolved origin display names
+and the instance's immediate source aliases at startup for presentation sizing.
+the host/UI do not inspect concrete module implementations. `widget()` returns a
+`ModuleWidget` with rendering, color preference, and elastic-height policy. Its
+default adapter still calls legacy `widgetLines()`, so existing providers retain
+their fixed-height behavior without implementing the new optional methods.
 
 The watcher debounces events, hashes installed JARs, validates a stable shadow copy,
 and discovers providers through separate URL class loaders. Unchanged packages

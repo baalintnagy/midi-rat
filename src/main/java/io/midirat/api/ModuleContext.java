@@ -6,6 +6,10 @@ import io.midirat.midi.Endpoint;
 import io.midirat.midi.MidiMessage;
 
 public interface ModuleContext {
+    default SourceNames sourceNames() {
+        return SourceNames.empty();
+    }
+
     void publish(Endpoint destination, List<MidiMessage> messages);
 
     void report(String diagnostic);

@@ -1,6 +1,7 @@
 package io.midirat.api;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MidiMessage;
@@ -14,6 +15,18 @@ public interface ModuleInstance extends AutoCloseable {
 
     default List<String> widgetLines() {
         return List.of();
+    }
+
+    default ModuleWidget widget() {
+        return ModuleWidget.fixed(this::widgetLines);
+    }
+
+    default Optional<EmitterControls> emitterControls() {
+        return Optional.empty();
+    }
+
+    default Optional<MonitorControls> monitorControls() {
+        return Optional.empty();
     }
 
     @Override

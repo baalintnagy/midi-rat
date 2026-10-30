@@ -4,16 +4,51 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.LongAdder;
 
+import io.midirat.api.ModuleContext;
 import io.midirat.api.ModuleInstance;
+import io.midirat.api.ModuleWidget;
+import io.midirat.api.MonitorControls;
+import io.midirat.api.SourceNames;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MessageCodec;
+import io.midirat.midi.MessageType;
 import io.midirat.midi.MidiMessage;
+import io.midirat.presentation.MonitorFormat;
 
-public final class MonitorModule implements ModuleInstance {
+public final class MonitorModule implements ModuleInstance, MonitorControls, ModuleWidget {
+    private MonitorColumns columns = MonitorColumns.from(SourceNames.empty());
+
+    @Override
+    public void start(ModuleContext context) {
+        columns = MonitorColumns.from(context.sourceNames());
+    }
+
+    @Override
+    public Optional<MonitorControls> monitorControls() {
+        return Optional.of(this);
+    }
+
+    @Override
+    public ModuleWidget widget() {
+        return this;
+    }
+
+    @Override
+    public boolean elastic() {
+        return true;
+    }
+
+    @Override
+    public List<String> lines(int availableLines) {
+        return widgetLines(availableLines);
+    }
+
+    private static final List<String> NOTE_NAMES = List.of(
+        "C", "(C#,Db)", "D", "(D#,Eb)", "E", "F", "(F#,Gb)", "G", "(G#,Ab)", "A", "(A#,Bb)", "B");
     private final int limit;
     private final boolean colors;
     private final ArrayBlockingQueue<Envelope> incoming;
@@ -63,6 +98,11 @@ public final class MonitorModule implements ModuleInstance {
 
     @Override
     public List<String> widgetLines() {
+        return widgetLines(41);
+    }
+
+    /** Render the newest complete rows within the host's current vertical budget. */
+    public List<String> widgetLines(int maxLines) {
         if (!paused) {
             Envelope e;
             while ((e = incoming.poll()) != null) {
@@ -75,27 +115,37 @@ public final class MonitorModule implements ModuleInstance {
         List<String> lines = new ArrayList<>();
         lines.add("Monitor %s | rows %d/%d | UI drops %d".formatted(
             paused ? "PAUSED" : "live", history.size(), limit, lost.sum()));
+        int visibleMessages = Math.max(0, maxLines - 1) / (expanded ? 2 : 1);
         history.stream()
-            .skip(Math.max(0, history.size() - 12))
+            .skip(Math.max(0, history.size() - visibleMessages))
             .forEach(e -> {
                 MidiMessage m = e.message();
-                String time = String.format(Locale.ROOT, "%,d", e.receiptNanos())
-                    .replace(',', ' ');
-                lines.add("CH: %2s | %-16s | D1: %3d | D2: %3d | Status: %3d | [%s] | %s ns"
-                    .formatted(m.channel() == 0 ? "--" : m.channel(), m.type(), m.data1(),
-                        m.data2(),
-                        m.status(), e.source()
-                            .name(),
-                        time));
+                String time = MonitorFormat.timestamp(e.receiptNanos());
+                String note = m.type() == MessageType.NOTE_ON
+                    || m.type() == MessageType.NOTE_OFF
+                        ? NOTE_NAMES.get(m.data1() % 12)
+                        : "--";
+                lines.add(
+                    """
+                    CH: %2s | %-11s | D1: %3d | D2: %3d | \
+                    Status: %3d | %s | %s | %s ns | Note: %-7s\
+                    """
+                        .formatted(m.channel() == 0 ? "--" : m.channel(),
+                            MonitorFormat.typeLabel(m.type()), m.data1(),
+                            m.data2(), m.status(), columns.origin(e.originName()),
+                            columns.immediate(e.source()
+                                .name()),
+                            time, note));
                 if (expanded) {
                     byte[] bytes = m.bytes();
                     int previewLength = Math.min(bytes.length, 96);
                     String preview = HexFormat.ofDelimiter(" ")
                         .withUpperCase()
                         .formatHex(bytes, 0, previewLength);
-                    lines.add("  length=%d | %s%s | %s".formatted(bytes.length, preview,
+                    lines.add("  length=%d | %s%s | %s | via: [%s]".formatted(bytes.length, preview,
                         bytes.length > previewLength ? " [truncated preview]" : "",
-                        MessageCodec.decoded(m)));
+                        MessageCodec.decoded(m), e.source()
+                            .name()));
                 }
             });
         return List.copyOf(lines);

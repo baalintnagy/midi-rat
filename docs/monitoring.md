@@ -9,7 +9,19 @@ emitters, or remappers.
 
 The filter subscribes to logical aliases such as `hammer-main` and
 `launchpad-midi-2`; the application file maps each alias to an exact physical name.
-The monitor displays `[monitor-input]` as the immediate source after filtering.
+The monitor displays the discovered hardware port name and immediate endpoint in
+separate, unlabeled columns, for example `Hammer 88 Pro [group 1] | monitor-input`
+with Windows MIDI Services. Origin comes first, immediate source second, and `Note`
+remains last. Logical aliases still control wiring and source matching.
+At startup, hardware display names and network endpoint names determine fixed source
+column widths. The timestamp also reserves a fixed width, so traffic with different
+names, values, or timestamp lengths does not move subsequent columns. Network reload
+recomputes the widths; an unexpected longer display name is ellipsized to preserve alignment.
+The type column is 11 characters wide. Monitor-only abbreviations are `CONT`, `TC`,
+`SONG_POS`, `SONG_SEL`, `TUNE_REQ`, `ACT_SEN`, and `SYS_RES`; YAML type names stay unchanged.
+The nanosecond column shows the 13 least significant decimal digits, zero-padded
+and grouped with spaces (for example `1 234 567 890 123 ns`). Full receipt timestamps
+remain intact internally.
 This is a snapshot of the current devices, not an automatic wildcard subscription.
 Add a new device to both the input mappings and filter sources when needed. If a
 configured device is disconnected, startup reports the missing binding; remove it
@@ -32,6 +44,13 @@ Alternatively, use the packaged launcher and its bundled Java runtime:
 
 Run these in an interactive terminal. Monitor controls: `p` pause/resume, `c` clear,
 `d` raw/decoded details, `y` copy the latest displayed message, `q` exit.
+
+The monitor fills the available terminal height with the newest messages, instead
+of stopping at twelve rows. A taller terminal shows more rows; expanded details
+share the same space. Resizing does not discard the retained history. The `Note`
+column shows pitch-class names on NOTE_ON/OFF rows: naturals such as `C`, and both
+common enharmonic names such as `(C#,Db)`. Other message types show `--`. The numeric
+MIDI note remains in D1, and copied emitter text preserves the original MIDI bytes.
 
 The colored view uses bright cyan for note-on, cyan for note-off, bright yellow
 for CC, yellow for pitch bend, bright magenta for pressure/program messages,

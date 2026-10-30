@@ -26,7 +26,10 @@ Its input callback queue reserves four slots for returned SysEx buffers alongsid
 4096 short-message slots, so short-message overflow cannot strand those buffers.
 
 **[Implementation completion I03]** Monitor history accepts 1–100000 rows, default
-2000. The workspace shows the latest twelve rows and optionally expanded details.
+2000. The workspace shows the newest messages that fit the current terminal height,
+sharing available rows between monitors and optionally expanded details. Standalone
+widget rendering defaults to forty message rows. Note-on/off rows include a separate
+pitch-class column with both common sharp/flat spellings for accidentals.
 Copy uses a host-local paste buffer plus selectable text. `NO_COLOR` and dumb
 terminals request a visible plain-color fallback. Emitter edits are session-local.
 The semicolon editor separator is a workspace convention, not part of message text.
@@ -56,6 +59,16 @@ external writer racing the final filesystem operation cannot be locked out by th
 optimistic protocol; resolve file changes before retrying.
 
 ## Remaining release qualification
+
+**[User extension D14]** The monitor's source column now displays the original input
+hardware display name and immediate bus/source alias in separate unlabeled columns,
+also retaining expanded `via` details. Logical origin identity remains separate
+from its display name, so device names do not affect subscription/rule equality.
+This intentionally changes
+the initial monitor presentation contract at the user's request. `Envelope` carries
+both endpoints; all subscription and rule-source matching continues to use the
+immediate source. New emitter/host/asynchronous generated messages start with their
+first published bus as origin. This is endpoint provenance, not note tracking.
 
 Local implementation checks have covered synthetic routing/configuration/remap/
 plugin/persistence tests, deterministic TamboUI rendering and keyboard exit, direct

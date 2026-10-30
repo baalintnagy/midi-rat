@@ -42,6 +42,15 @@ public final class DeviceManager implements AutoCloseable {
         receive = next;
     }
 
+    public Map<Endpoint, String> inputNames() {
+        Map<Endpoint, String> names = new LinkedHashMap<>();
+        app.inputs()
+            .forEach((alias, binding) -> names.put(
+                new Endpoint(alias, Endpoint.Kind.INPUT), backend.resolve(binding, true)
+                    .name()));
+        return Map.copyOf(names);
+    }
+
     public synchronized void connect() {
         try {
             Map<String, List<Endpoint>> shared = new LinkedHashMap<>();
@@ -60,13 +69,16 @@ public final class DeviceManager implements AutoCloseable {
                         _ -> new OutputRoute(port));
                     outputs.put(new Endpoint(alias, Endpoint.Kind.OUTPUT), route);
                 });
-            shared.forEach(
-                (key, aliases) -> inputs.put(key, backend.openInput(ports.get(key), message -> {
+            shared.forEach((key, aliases) -> {
+                MidiBackend.Port port = ports.get(key);
+                inputs.put(key, backend.openInput(port, message -> {
                     long receipt = message.hostReceiptNanos() - origin;
                     for (Endpoint alias : aliases) {
-                        receive.accept(new Envelope(alias, receipt, message.message()));
+                        receive.accept(new Envelope(alias, receipt, message.message(), alias,
+                            port.name()));
                     }
-                })));
+                }));
+            });
             errors.accept("Connected %d inputs and %d output handles on %s".formatted(
                 inputs.size(), handles.size(), app.backend()));
         } catch (RuntimeException exception) {

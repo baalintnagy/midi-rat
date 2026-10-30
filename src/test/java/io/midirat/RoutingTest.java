@@ -70,6 +70,9 @@ class RoutingTest {
             assertTrue(latch.await(2, TimeUnit.SECONDS));
             assertEquals(6, received.size());
             assertTrue(received.stream()
+                .allMatch(e -> e.origin()
+                    .equals(input)));
+            assertTrue(received.stream()
                 .allMatch(e -> e.source()
                     .equals(bus)));
             assertTrue(received.stream()

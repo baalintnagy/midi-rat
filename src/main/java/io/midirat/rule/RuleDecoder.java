@@ -79,21 +79,7 @@ public final class RuleDecoder {
         Channel channel = new Channel(channels, numeric(fields, "data1", 127),
             numeric(fields, "data2", 127));
         if (IntStream.rangeClosed(128, 255)
-            .noneMatch(status -> {
-                MessageType actual = MessageType.of(status);
-                boolean kind = actual == type
-                    || type == MessageType.NOTE
-                        && (actual == MessageType.NOTE_ON
-                            || actual == MessageType.NOTE_OFF)
-                    || type == MessageType.NOTE_OFF
-                        && actual == MessageType.NOTE_ON
-                    || type == MessageType.SYSEX_START
-                        && status == 0xF0;
-                return kind
-                    && statuses.contains(status)
-                    && (!type.channel()
-                        || channels.contains((status & 15) + 1));
-            })) {
+            .noneMatch(status -> matchesScope(type, status, statuses, channels))) {
             throw value.error("Contradictory type/channel/status predicates");
         }
         MessageRule compiled = switch (type) {
@@ -115,26 +101,29 @@ public final class RuleDecoder {
         default -> new MessageRule.SystemSignal(type, scope);
         };
         boolean feasible = IntStream.rangeClosed(128, 255)
-            .anyMatch(status -> {
-                MessageType actual = MessageType.of(status);
-                boolean kind = actual == type
-                    || type == MessageType.NOTE
-                        && (actual == MessageType.NOTE_ON
-                            || actual == MessageType.NOTE_OFF)
-                    || type == MessageType.NOTE_OFF
-                        && actual == MessageType.NOTE_ON
-                    || type == MessageType.SYSEX_START
-                        && status == 0xF0;
-                return kind
-                    && statuses.contains(status)
-                    && (!type.channel()
-                        || channels.contains((status & 15) + 1))
-                    && feasiblePayload(compiled, status);
-            });
+            .anyMatch(status -> matchesScope(type, status, statuses, channels)
+                && feasiblePayload(compiled, status));
         if (!feasible) {
             throw value.error("Contradictory raw/semantic predicates");
         }
         return compiled;
+    }
+
+    private static boolean matchesScope(MessageType type, int status, IntSelection statuses,
+        IntSelection channels) {
+        MessageType actual = MessageType.of(status);
+        boolean kind = actual == type
+            || type == MessageType.NOTE
+                && (actual == MessageType.NOTE_ON
+                    || actual == MessageType.NOTE_OFF)
+            || type == MessageType.NOTE_OFF
+                && actual == MessageType.NOTE_ON
+            || type == MessageType.SYSEX_START
+                && status == 0xF0;
+        return kind
+            && statuses.contains(status)
+            && (!type.channel()
+                || channels.contains((status & 15) + 1));
     }
 
     private static boolean intersects(IntSelection a, IntSelection b, int min, int max) {

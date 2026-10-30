@@ -9,8 +9,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
+import io.midirat.api.EmitterControls;
 import io.midirat.midi.MessageCodec;
-import io.midirat.module.EmitterModule;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.nodes.MappingNode;
@@ -25,7 +25,7 @@ public final class EmitterPersistence {
     }
 
     public static byte[] save(Path file, byte[] expected, String name,
-        EmitterModule emitter) throws IOException {
+        EmitterControls emitter) throws IOException {
         if (!Arrays.equals(expected, Files.readAllBytes(file))) {
             throw new IOException(
                 "Network changed externally; reload or resolve edits before Save");
