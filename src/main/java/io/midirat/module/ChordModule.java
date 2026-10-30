@@ -13,7 +13,7 @@ import io.midirat.presentation.ChordFormat;
 public final class ChordModule implements ModuleInstance {
     private final ChordRecognizer recognizer;
     private final HeldNotes held = new HeldNotes();
-    private volatile List<String> lines = List.of("Chord: --", "Held MIDI notes: --");
+    private volatile List<String> lines = ChordFormat.lines(List.of(), List.of());
 
     public ChordModule(ChordRecognizer recognizer) {
         this.recognizer = recognizer;

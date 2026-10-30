@@ -15,6 +15,11 @@ public final class ChordFormat {
             : pitches.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(", "));
-        return List.of("Chord: %s".formatted(chord), "Held MIDI notes: %s".formatted(notes));
+        String names = pitches.isEmpty() ? "--"
+            : pitches.stream()
+                .map(NoteNames::pitchClass)
+                .collect(Collectors.joining(", "));
+        return List.of("Chord: %s".formatted(chord), "Note names: %s".formatted(names),
+            "Held MIDI notes: %s".formatted(notes));
     }
 }

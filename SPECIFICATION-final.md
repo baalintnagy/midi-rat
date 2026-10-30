@@ -688,7 +688,11 @@ held-key lifetime. Explicit received CC120/CC123 clears that channel's input sta
 Other non-note messages do not affect recognition. No MIDI is emitted.
 
 Display all library candidates in library order, `--` when no notes remain, and
-`unrecognized` when the held set has no match. Also display held MIDI pitches.
+`unrecognized` when the held set has no match. Also display held MIDI pitches and,
+on a separate `Note names` line, the monitor's musical pitch-class labels in the same
+order. Use both common enharmonic spellings for accidentals, e.g. `(C#,Db)`, with no
+octave suffix, matching the monitor. Show `--` on both held-note lines when empty.
+Display `Note names` above `Held MIDI notes`.
 Each module instance owns independent state; reload/removal discards it silently.
 Publish immutable display snapshots to the UI. The bundled library must work offline
 with no Node/npm installation; preserve its license and reproducible build provenance.
@@ -1150,6 +1154,12 @@ subscribe to its `musical-input` bus. The chord observer subscribes directly to
 Bind this output by exact name for WinMM and discovered stable endpoint/group ID
 for Windows MIDI Services.
 
+**[User example addition, 30 October 2026]** Both sostenuto example networks also
+include a `midi-emitter` named `manual-postSSB`, with `destinations: [postSSB]`,
+`format: hex`, and an initially empty `messages` list. It sends only when invoked
+by the user and connects directly to the physical output. The same shared networks
+serve all four WinMM/Windows MIDI Services application examples.
+
 **[Design completion D17]** To retain dedicated controller identity through a shared
 filtered bus, support `controlOrigins: [launchpad-main]` (or `[hammer-midi-3]` in
 the CC22 example). Select either `controlOrigins` or `controlSources`, never both.
@@ -1245,6 +1255,17 @@ The TamboUI host must provide a keyboard-navigable workspace, port/bus/instance
 overview, multiple module widgets, backend/connection/lifecycle status, diagnostics,
 explicit reload/reconnect/Panic/exit controls, and emitter Send/Save actions.
 Widgets use host-owned UI scheduling and release resources when their instance stops.
+
+**[User presentation addition, 30 October 2026; design completion D18]** Group the
+application title and keyboard hints with clear spacing. Present connection status,
+module widgets, and activity inside rounded borders. Highlight the focused module
+with a cyan border and a textual focus marker; show its position, name, and type
+in the title. Apply presentation-only token colors to module data (labels, numeric
+values, on/off states, and separators), retaining the monitor's existing event palette
+and exact fixed-column text. Honor `NO_COLOR`, dumb terminals, and widget color
+preferences. Share available content rows equally between elastic monitors after
+accounting for borders and spacing. On small terminals show the focused widget;
+continue draining hidden monitors so their retained history remains current.
 
 Recoverable instance errors stop or disable that instance and report an actionable
 diagnostic; unrelated instances continue where possible. Report unrecoverable host

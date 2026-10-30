@@ -48,3 +48,9 @@ network:
       type: midi-chord
       sources: [sostenuto-output]
       settings: {}
+    - name: manual-postSSB
+      type: midi-emitter
+      destinations: [postSSB]
+      settings:
+        format: hex
+        messages: []

@@ -49,8 +49,13 @@ or a universal nullable object would weaken it.
 
 ## Remaining opportunities
 
-The workspace layout and native adapters are still relatively large. Future work
-can extract layout calculations and native resource wrappers, but native ownership,
+`WorkspaceView` now owns bordered layout and text styling, leaving the workspace
+controller responsible for focus, keyboard dispatch, and host commands. Tests render
+real TamboUI buffers to check colors, multiple monitors, compact layouts, and plain
+fallback. `WorkspacePreview` rasterizes the same buffer for optional visual QA.
+
+Native adapters are still relatively large. Future work can extract native resource
+wrappers, but native ownership,
 driver-error recovery, and worker shutdown need stronger device-level coverage before
 altering their concurrency structure. Third-party emitter implementations with mutable
 state should override the default snapshot adapter to publish coherent edits. The monitor formatter still exposes

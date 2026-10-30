@@ -1,7 +1,6 @@
 package io.midirat.ui;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -15,11 +14,6 @@ import dev.tamboui.terminal.Backend;
 import dev.tamboui.terminal.BackendFactory;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.terminal.Terminal;
-import dev.tamboui.text.Line;
-import dev.tamboui.text.Span;
-import dev.tamboui.text.Text;
-import dev.tamboui.widgets.paragraph.Paragraph;
-import io.midirat.api.ModuleWidget;
 import io.midirat.api.MonitorControls;
 import io.midirat.config.NetworkConfig.Instance;
 import io.midirat.host.Diagnostics;
@@ -201,103 +195,14 @@ public final class Workspace {
     }
 
     private void render(Frame frame) {
-        List<Line> lines = new ArrayList<>();
-        lines.add(
-            Line.from(Span.raw("MIDI Rat  |  Tab/j/k focus  P PANIC  r reload  R reconnect  q exit")
-                .bold()));
-        lines.add(Line.from(
-            "p/c/d/y pause/clear/detail/copy | e/v/Enter/s edit/paste/send/save | Ctrl+P Panic"));
-        if (!colorTerminal) {
-            lines.add(Line.from("Plain color fallback: terminal/NO_COLOR"));
-        }
-        host.status()
-            .forEach(line -> lines.add(Line.from(line)));
         List<Instance> instances = host.instances();
         if (!instances.isEmpty()) {
             focused = Math.floorMod(focused, instances.size());
         }
-        int height = frame.area()
-            .height();
-        List<String> recent = diagnostics.recent();
-        List<List<String>> widgetRows = new ArrayList<>();
-        int monitorCount = 0;
-        int otherRows = 0;
-        for (Instance instance : instances) {
-            if (instance.module()
-                .widget()
-                .elastic()) {
-                monitorCount++;
-                widgetRows.add(List.of());
-            } else {
-                List<String> rows = instance.module()
-                    .widget()
-                    .lines(height);
-                otherRows += rows.size();
-                widgetRows.add(rows);
-            }
-        }
-        int footerRows = 1 + Math.min(4, recent.size()) + (editor.active() ? 2 : 0)
-            + (copied.isEmpty() ? 0 : 1);
-        int monitorLines = monitorCount == 0 ? 1
-            : Math.max(1,
-                (height - lines.size() - instances.size() - otherRows - footerRows) / monitorCount);
-        for (int i = 0; i < instances.size(); i++) {
-            Instance instance = instances.get(i);
-            lines.add(Line.from(Span.raw("%s %s (%s)".formatted(i == focused ? ">" : " ",
-                instance.name(), instance.type()))
-                .bold()));
-            ModuleWidget widget = instance.module()
-                .widget();
-            boolean colors = colorTerminal
-                && widget.colors();
-            List<String> rows = widget.elastic()
-                ? widget.lines(monitorLines)
-                : widgetRows.get(i);
-            for (String row : rows) {
-                lines.add(MonitorRowStyle.render(row, colors));
-            }
-        }
-        if (editor.active()) {
-            lines.add(Line.from(
-                "EDIT %s (semicolon separates messages; Ctrl+T format, Enter accept, Esc cancel)"
-                    .formatted(editor.format())));
-            lines.add(Line.from(editor.text()));
-        }
-        if (!copied.isEmpty()) {
-            lines.add(Line.from("Copy: %s".formatted(copied)));
-        }
-        lines.add(Line.from("Diagnostics (log queue loss %d)".formatted(diagnostics.lost())));
-        recent.stream()
-            .skip(Math.max(0, recent.size() - 4))
-            .forEach(s -> lines.add(Line.from(s)));
-        // Keep status/controls and the focused widget visible on small terminals.
-        if (lines.size() > height
-            && !instances.isEmpty()) {
-            List<Line> compact = new ArrayList<>(lines.subList(0, Math.min(3, lines.size())));
-            Instance selected = instances.get(focused);
-            compact.add(Line.from("> %s (%s)".formatted(selected.name(), selected.type())));
-            int compactBudget = Math.max(1,
-                height - compact.size() - Math.min(2, recent.size()) - (editor.active() ? 1 : 0));
-            ModuleWidget selectedWidget = selected.module()
-                .widget();
-            List<String> selectedRows = selectedWidget.elastic()
-                ? selectedWidget.lines(compactBudget)
-                : widgetRows.get(focused);
-            selectedRows.stream()
-                .forEach(s -> compact.add(MonitorRowStyle.render(s,
-                    colorTerminal
-                        && selectedWidget.colors())));
-            if (editor.active()) {
-                compact.add(Line.from(editor.text()));
-            }
-            recent.stream()
-                .skip(Math.max(0, recent.size() - 2))
-                .forEach(s -> compact.add(Line.from(s)));
-            lines.clear();
-            lines.addAll(compact);
-        }
-        frame.renderWidget(Paragraph.builder()
-            .text(Text.from(lines))
-            .build(), frame.area());
+        WorkspaceView view = new WorkspaceView(host.status(), instances, focused,
+            diagnostics.recent(), diagnostics.lost(),
+            new WorkspaceView.Editor(editor.active(), editor.format(), editor.text()),
+            copied, colorTerminal);
+        frame.renderWidget(view, frame.area());
     }
 }

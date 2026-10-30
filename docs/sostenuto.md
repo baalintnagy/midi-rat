@@ -83,16 +83,41 @@ The processor also sends its output to physical `postSSB`. Umbrella remains enab
 with a 1 ms delay and 1 ms tail. Both backend application variants bind `postSSB`;
 Windows MIDI Services uses its discovered stable endpoint/group ID.
 
+Both networks also include `manual-postSSB`, an initially empty hex emitter connected
+directly to `postSSB`. Focus it with Tab, use `e` to edit or `v` to paste a copied
+message, and press Enter to send the sequence. Its direct output is separate from
+the input-monitor and chord-observer subscriptions. These networks are shared by
+their WinMM and Windows MIDI Services application variants.
+
+### CC22 momentary-control network
+
 ```mermaid
 flowchart LR
     I[All eight inputs] --> F[Musical-message filter]
     F --> B([musical-input])
     B --> M[Input monitor]
-    B --> S[Sostenuto]
+    B --> S["Sostenuto<br/>hammer-midi-3 · CC22 hold"]
     S --> O([sostenuto-output])
     O --> C[Chord observer]
     S --> P[postSSB MIDI output]
+    E[manual-postSSB emitter] --> P
 ```
+
+### Launchpad note-78 toggle network
+
+```mermaid
+flowchart LR
+    I[All eight inputs] --> F[Musical-message filter]
+    F --> B([musical-input])
+    B --> M[Input monitor]
+    B --> S["Sostenuto<br/>launchpad-main · note 78 toggle"]
+    S --> O([sostenuto-output])
+    O --> C[Chord observer]
+    S --> P[postSSB MIDI output]
+    E[manual-postSSB emitter] --> P
+```
+
+### Terminal commands
 
 From the repository root, with the rebuilt Windows image:
 

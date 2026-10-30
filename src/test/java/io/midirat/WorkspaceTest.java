@@ -57,14 +57,17 @@ class WorkspaceTest {
             var terminal = TerminalBuilder.builder()
                 .system(false)
                 .dumb(true)
+                .encoding(StandardCharsets.UTF_8)
                 .streams(new ByteArrayInputStream("q".getBytes(StandardCharsets.UTF_8)), bytes)
                 .size(new Size(120, 40))
                 .type("xterm")
                 .build()) {
             new Workspace(host, diagnostics).run(new JLineBackend(terminal));
         }
-        String screen = bytes.toString(StandardCharsets.UTF_8);
-        assertTrue(screen.contains("MIDI Rat"), screen);
+        String screen = bytes.toString(StandardCharsets.UTF_8)
+            .replaceAll("\u001B\\[[0-?]*[ -/]*[@-~]", "")
+            .replaceAll("\\s", "");
+        assertTrue(screen.contains("MIDIRat"), screen);
         assertTrue(screen.contains("manual"), screen);
         assertTrue(screen.contains("monitor"), screen);
     }

@@ -61,6 +61,14 @@ pressure; other types use bright accents. Labels and separators use the terminal
 default color. The same palette applies to the compact view; `colors: false` and
 the terminal's plain-color fallback disable it.
 
+The workspace uses rounded borders with spaced titles showing each module's name,
+type, and position. The focused widget has a cyan border and `>` marker. Module
+labels, numeric values, states, and separators receive lightweight syntax accents;
+MIDI row colors and fixed column widths remain unchanged. Connection status and
+recent activity have their own bordered areas. Multiple monitors divide the remaining
+content rows equally, accounting for border height and spacing. Small terminals show
+the focused widget, while hidden monitor histories continue updating.
+
 To validate the files without opening devices or starting the UI:
 
 ```powershell

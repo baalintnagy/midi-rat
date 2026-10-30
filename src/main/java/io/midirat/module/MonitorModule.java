@@ -18,6 +18,7 @@ import io.midirat.midi.MessageCodec;
 import io.midirat.midi.MessageType;
 import io.midirat.midi.MidiMessage;
 import io.midirat.presentation.MonitorFormat;
+import io.midirat.presentation.NoteNames;
 
 public final class MonitorModule implements ModuleInstance, MonitorControls, ModuleWidget {
     private MonitorColumns columns = MonitorColumns.from(SourceNames.empty());
@@ -47,8 +48,6 @@ public final class MonitorModule implements ModuleInstance, MonitorControls, Mod
         return widgetLines(availableLines);
     }
 
-    private static final List<String> NOTE_NAMES = List.of(
-        "C", "(C#,Db)", "D", "(D#,Eb)", "E", "F", "(F#,Gb)", "G", "(G#,Ab)", "A", "(A#,Bb)", "B");
     private final int limit;
     private final boolean colors;
     private final ArrayBlockingQueue<Envelope> incoming;
@@ -123,7 +122,7 @@ public final class MonitorModule implements ModuleInstance, MonitorControls, Mod
                 String time = MonitorFormat.timestamp(e.receiptNanos());
                 String note = m.type() == MessageType.NOTE_ON
                     || m.type() == MessageType.NOTE_OFF
-                        ? NOTE_NAMES.get(m.data1() % 12)
+                        ? NoteNames.pitchClass(m.data1())
                         : "--";
                 lines.add(
                     """
