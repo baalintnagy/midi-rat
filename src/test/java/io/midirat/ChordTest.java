@@ -16,6 +16,34 @@ import org.junit.jupiter.api.Test;
 
 class ChordTest {
     @Test
+    void retriggersThenUnrecognizedClusterDoNotLeaveThePreviousChordHeld() {
+        var module = new ChordModule(new TonalChordRecognizer());
+        var bus = new Endpoint("sostenuto-output", Endpoint.Kind.BUS);
+        for (int note : List.of(60, 64, 67)) {
+            send(module, bus, bus, 0x90, note, 100);
+            send(module, bus, bus, 0x90, note, 100);
+        }
+        assertTrue(module.widgetLines()
+            .getFirst()
+            .contains("CM"));
+        for (int note : List.of(61, 62, 63, 65, 66, 68, 69, 70, 71)) {
+            send(module, bus, bus, 0x90, note, 100);
+        }
+        assertEquals("Chord: unrecognized", module.widgetLines()
+            .getFirst());
+        for (int note = 60; note <= 71; note++) {
+            send(module, bus, bus, 0x80, note, 0);
+        }
+        assertEquals(List.of("Chord: --", "Held MIDI notes: --"), module.widgetLines());
+        for (int note : List.of(62, 65, 69)) {
+            send(module, bus, bus, 0x90, note, 100);
+        }
+        assertTrue(module.widgetLines()
+            .getFirst()
+            .contains("Dm"));
+    }
+
+    @Test
     void bundledTonalRecognizesTriadsSeventhsInversionsAndLargerChords() {
         var recognizer = new TonalChordRecognizer();
         assertTrue(recognizer.recognize(List.of(60, 64, 67))
@@ -33,7 +61,7 @@ class ChordTest {
     }
 
     @Test
-    void mergesEndpointsAndChannelsAndCountsOverlappingPresses() {
+    void mergesEndpointsAndChannelsAndTreatsRepeatedNoteOnsAsRetriggers() {
         var received = new AtomicReference<List<Integer>>(List.of());
         var module = new ChordModule(pitches -> {
             received.set(pitches);
@@ -47,7 +75,7 @@ class ChordTest {
         send(module, input, bus, 0x92, 67, 100);
         assertEquals(List.of(60, 64, 67), received.get());
         send(module, bus, input, 0x80, 60, 0);
-        assertEquals(List.of(60, 64, 67), received.get());
+        assertEquals(List.of(64, 67), received.get());
         send(module, input, bus, 0x90, 60, 0);
         assertEquals(List.of(64, 67), received.get());
         send(module, input, input, 0x80, 64, 0);
@@ -93,6 +121,20 @@ class ChordTest {
         send(module, source, source, 0xB1, 120, 0);
         assertEquals("Chord: --", module.widgetLines()
             .getFirst());
+    }
+
+    @Test
+    void releasingAPitchOnOneChannelKeepsItHeldOnAnotherChannel() {
+        var module = new ChordModule(_ -> List.of());
+        var source = new Endpoint("input", Endpoint.Kind.INPUT);
+        send(module, source, source, 0x90, 60, 100);
+        send(module, source, source, 0x91, 60, 100);
+        send(module, source, source, 0x80, 60, 0);
+        assertEquals("Held MIDI notes: 60", module.widgetLines()
+            .get(1));
+        send(module, source, source, 0x91, 60, 0);
+        assertEquals("Held MIDI notes: --", module.widgetLines()
+            .get(1));
     }
 
     private static void send(ChordModule module, Endpoint source, Endpoint origin,

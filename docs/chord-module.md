@@ -17,9 +17,10 @@ no held notes; `unrecognized` means the library found no chord for the current s
 Inversions retain the lowest held pitch as bass.
 
 Positive note-ons add held keys; note-offs and velocity-zero note-ons release them.
-Overlapping presses of the same channel/pitch are counted across sources, so one
-release does not remove a pitch still held by another press. A release from any
-source can decrement that channel/pitch count. Unmatched releases are ignored.
+Repeated note-ons for the same channel/pitch are retriggers, not additional held
+voices. One release from any source clears that channel/pitch. This also handles
+processors that retain several releases and emit one final note-off. The same pitch
+held on another channel remains active. Unmatched releases are ignored.
 All channels contribute to the same chord. Sustain/sostenuto pedals do not prolong
 held-key lifetime. Explicit incoming CC120/CC123 clears that channel's held state.
 Reload starts empty; the module never emits MIDI or corrective note-offs.

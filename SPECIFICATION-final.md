@@ -676,10 +676,12 @@ or recognition algorithm. Use Tonal 5.1.3 embedded through Rhino 1.8.1.
 ```
 
 **[Design completion D15]** Held means unmatched positive-velocity note-ons, with
-velocity-zero note-ons treated as releases. Count overlapping presses per MIDI
-channel and pitch across all sources; releases decrement the aggregate count for
-that channel/pitch regardless of origin or immediate source. Ignore unmatched
-releases. Combine all channels and octaves for recognition, passing ascending MIDI
+velocity-zero note-ons treated as releases. Maintain boolean held state per MIDI
+channel and pitch across all sources: repeated note-ons retrigger that pitch, and
+one release clears it regardless of origin or immediate source. Do not accumulate
+release counts; a processor such as sostenuto may emit multiple note-ons followed
+by a single final note-off. Ignore unmatched releases and preserve the same pitch
+held on another channel. Combine all channels and octaves for recognition, passing ascending MIDI
 pitches so the library retains the lowest note as bass. Duplicate held pitches
 appear once in the recognition input. Sustain/sostenuto controllers do not extend
 held-key lifetime. Explicit received CC120/CC123 clears that channel's input state.

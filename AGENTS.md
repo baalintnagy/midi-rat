@@ -18,7 +18,8 @@
   implicit panic on reload/removal/shutdown. Preserve only the defined CC-trigger
   transition state. Explicit host Panic must cover all buses as specified.
 - The user-requested `midi-chord` observer is a narrow exception: keep its own held
-  input-note counts for chord naming, combining origins and immediate sources.
+  input-note state for chord naming, combining origins and immediate sources.
+  Repeated note-ons retrigger a channel/pitch; they do not accumulate release counts.
   This does not authorize note tracking or corrective output in routing/remapping.
 - The user-requested `sostenuto` processor is another narrow exception: retain
   pressed/latched/deferred-release state and bounded umbrella scheduling required

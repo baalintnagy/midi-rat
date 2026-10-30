@@ -14,7 +14,7 @@ import io.midirat.midi.MidiMessage;
 /** Observer-local held keys, independent of endpoint identity; never emits MIDI. */
 public final class ChordModule implements ModuleInstance {
     private final ChordRecognizer recognizer;
-    private final int[][] held = new int[16][128];
+    private final boolean[][] held = new boolean[16][128];
     private volatile List<String> lines = List.of("Chord: --", "Held MIDI notes: --");
 
     public ChordModule(ChordRecognizer recognizer) {
@@ -26,23 +26,23 @@ public final class ChordModule implements ModuleInstance {
         MidiMessage message = envelope.message();
         MessageType type = message.matchType();
         if (type == MessageType.NOTE_ON) {
-            held[message.channel() - 1][message.data1()]++;
+            held[message.channel() - 1][message.data1()] = true;
         } else if (type == MessageType.NOTE_OFF) {
-            int[] channel = held[message.channel() - 1];
-            if (channel[message.data1()] == 0) {
+            boolean[] channel = held[message.channel() - 1];
+            if (!channel[message.data1()]) {
                 return List.of();
             }
-            channel[message.data1()]--;
+            channel[message.data1()] = false;
         } else if (type == MessageType.CC
             && (message.data1() == 120
                 || message.data1() == 123)) {
-            Arrays.fill(held[message.channel() - 1], 0);
+            Arrays.fill(held[message.channel() - 1], false);
         } else {
             return List.of();
         }
         List<Integer> pitches = IntStream.range(0, 128)
             .filter(pitch -> IntStream.range(0, 16)
-                .anyMatch(channel -> held[channel][pitch] > 0))
+                .anyMatch(channel -> held[channel][pitch]))
             .boxed()
             .toList();
         List<String> chords = recognizer.recognize(pitches);
