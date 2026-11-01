@@ -189,7 +189,10 @@ configuration before running it.
 
 ## Use the workspace
 
-Tab or `j` advances focus; `k` moves to the previous widget. Compact modules share
+Tab or `j` advances focus; `k` moves to the previous widget. The single-line MIDI Rat
+title has a single-line gray separator beneath it and receives initial focus. Press `d`
+on it for full-screen keyboard help, then Esc or `d`
+to return. Use `[` and `]` to scroll the help on smaller terminals. Compact modules share
 columns when they fit, and monitors retain full-width rows. Connections / Activity is
 also focusable and summarizes the backend, outputs, and module health.
 
@@ -255,14 +258,14 @@ mvn --batch-mode --no-transfer-progress '-P!windows-package' verify
 
 | Output | Location |
 | --- | --- |
-| Executable host JAR | `target/midi-rat-0.2.0.jar` |
+| Executable host JAR | `target/midi-rat-0.3.0.jar` |
 | Windows application and runtime | `target/jpackage-out/MidiRat/` |
 
 Run the source build with an installed JDK 25:
 
 ```powershell
-java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.2.0.jar --validate
-java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.2.0.jar
+java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.3.0.jar --validate
+java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.3.0.jar
 ```
 
 Create a distributable ZIP after a successful Windows build:

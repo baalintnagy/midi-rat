@@ -1,6 +1,5 @@
 package io.midirat.ui;
 
-import static dev.tamboui.text.Span.raw;
 import static io.midirat.ui.ModuleTextStyle.span;
 
 import java.util.ArrayList;
@@ -106,11 +105,11 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
 
     private void renderCompact(Rect area, Buffer buffer, List<Pane> panes,
         List<Line> header, List<Line> connections) {
-        int headerHeight = Math.min(area.height(), area.height() < 12 ? 1 : header.size());
+        int headerHeight = Math.min(area.height(), header.size());
         paragraph(new Rect(area.x(), area.y(), area.width(), headerHeight), buffer, header);
         int y = area.y() + headerHeight;
-        int index = Math.floorMod(focused, panes.size() + 1);
-        if (index == panes.size()) {
+        int index = Math.floorMod(focused, panes.size() + 2);
+        if (index >= panes.size()) {
             renderHost(new Rect(area.x(), y, area.width(), Math.max(0, area.bottom() - y)),
                 buffer, connections);
             return;
@@ -129,9 +128,9 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
     }
 
     private void renderHost(Rect area, Buffer buffer, List<Line> connections) {
-        boolean selected = Math.floorMod(focused, instances.size() + 1) == instances.size();
+        boolean selected = Math.floorMod(focused, instances.size() + 2) == instances.size();
         Line title = Line.from(span(" %s %d/%d  CONNECTIONS / ACTIVITY ".formatted(
-            selected ? ">" : " ", instances.size() + 1, instances.size() + 1),
+            selected ? ">" : " ", instances.size() + 1, instances.size() + 2),
             selected ? Color.LIGHT_CYAN : Color.WHITE, colors));
         panel(area, buffer, title, connections, selected, colors);
     }
@@ -151,7 +150,7 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
     private Line paneTitle(Pane pane, int index, boolean selected, boolean enabled) {
         Line title = Line.from(
             span(" %s %d/%d  %s  ".formatted(selected ? ">" : " ", index + 1,
-                instances.size() + 1, pane.instance()
+                instances.size() + 2, pane.instance()
                     .name()),
                 selected ? Color.LIGHT_CYAN : Color.WHITE, enabled),
             span("%s ".formatted(pane.instance()
@@ -163,7 +162,7 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
     }
 
     private void renderPane(Rect area, Buffer buffer, Pane pane, int index, int contentRows) {
-        boolean selected = index == Math.floorMod(focused, instances.size() + 1);
+        boolean selected = index == Math.floorMod(focused, instances.size() + 2);
         boolean enabled = colors
             && pane.widget()
                 .colors();
@@ -224,24 +223,16 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
     }
 
     private List<Line> header(int width) {
-        Line brand = Line.from(span(" MIDI Rat ", Color.LIGHT_CYAN, colors),
-            span(" /  MIDI workspace", Color.DARK_GRAY, colors));
+        boolean selected = Math.floorMod(focused, instances.size() + 2) == instances.size() + 1;
+        Line brand = Line.from(span(" %s MIDI Rat ".formatted(selected ? ">" : " "),
+            selected ? Color.LIGHT_CYAN : Color.WHITE, colors),
+            span("(d: open details)", Color.DARK_GRAY, colors));
         if (colors) {
             brand = brand.bold();
         }
-        List<Line> lines = new ArrayList<>(List.of(brand,
-            Line.from(span(" Tab/j/k", Color.LIGHT_CYAN, colors), raw(" focus   "),
-                span("P / Ctrl+P", Color.LIGHT_RED, colors), raw(" panic   "),
-                span("r", Color.LIGHT_CYAN, colors), raw(" reload   "),
-                span("R", Color.LIGHT_CYAN, colors), raw(" reconnect   "),
-                span("q", Color.LIGHT_CYAN, colors), raw(" exit")),
-            Line.from(span(" p/c/d/y", Color.LIGHT_CYAN, colors),
-                raw(" pause/clear/details/copy   "),
-                span("e/v/Enter/s", Color.LIGHT_CYAN, colors),
-                raw(" edit/paste/send/save"))));
-        if (!colors) {
-            lines.add(2, Line.from(" Plain color fallback: terminal/NO_COLOR"));
-        }
+        Line separator = Line.from(span("─".repeat(Math.max(0, width)),
+            Color.rgb(64, 64, 64), colors));
+        List<Line> lines = new ArrayList<>(List.of(brand, separator));
         if (editor.active()) {
             lines.addAll(HostPanel.wrap(
                 "EDIT %s | Ctrl+T format | Enter accept | Esc cancel".formatted(editor.format()),
@@ -251,7 +242,6 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
         if (!copied.isEmpty()) {
             lines.addAll(HostPanel.wrap("Copy: %s".formatted(copied), width, colors));
         }
-        lines.add(Line.empty());
         return lines;
     }
 

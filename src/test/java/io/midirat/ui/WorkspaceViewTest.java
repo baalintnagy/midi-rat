@@ -20,6 +20,52 @@ import org.junit.jupiter.api.Test;
 
 class WorkspaceViewTest {
     @Test
+    void titleIsFocusableWithoutInlineKeyboardHelp() {
+        var area = Rect.of(100, 20);
+        var buffer = Buffer.empty(area);
+        view(List.of(), 1, true).render(area, buffer);
+        assertTrue(text(buffer).contains("> MIDI Rat"));
+        assertTrue(text(buffer).contains("(d: open details)"));
+        assertTrue(IntStream.range(0, area.width())
+            .anyMatch(x -> buffer.get(x, 0)
+                .symbol()
+                .equals("(")
+                && buffer.get(x, 0)
+                    .style()
+                    .fg()
+                    .filter(Color.DARK_GRAY::equals)
+                    .isPresent()));
+        assertTrue(IntStream.range(0, area.width())
+            .allMatch(x -> buffer.get(x, 1)
+                .symbol()
+                .equals("─")
+                && buffer.get(x, 1)
+                    .style()
+                    .fg()
+                    .filter(Color.rgb(64, 64, 64)::equals)
+                    .isPresent()));
+        assertFalse(text(buffer).contains("pause/clear/details/copy"));
+        assertFalse(text(buffer).contains("Tab/j/k"));
+    }
+
+    @Test
+    void keyboardHelpShowsShortcutsAndScrollsInSmallTerminals() {
+        var area = Rect.of(120, 40);
+        var buffer = Buffer.empty(area);
+        var scroll = new HostPanel.Scroll(0);
+        new KeyboardHelpView(scroll, false).render(area, buffer);
+        assertTrue(text(buffer).contains("Keyboard help"));
+        assertTrue(text(buffer).contains("Ctrl+P"));
+        assertTrue(text(buffer).contains("Ctrl+T"));
+        var small = Rect.of(45, 8);
+        var compact = Buffer.empty(small);
+        new KeyboardHelpView(scroll, false).render(small, compact);
+        scroll.move(100);
+        new KeyboardHelpView(scroll, false).render(small, compact);
+        assertTrue(text(compact).contains("Esc / d back"));
+    }
+
+    @Test
     void syntaxAccentsPreserveTextAndNoColorRemovesStyling() {
         String text = "Pressed: 3 | Umbrella: on | queue=0";
         var styled = ModuleTextStyle.render(text, true);
@@ -65,7 +111,7 @@ class WorkspaceViewTest {
         String text = text(buffer);
         assertTrue(text.contains("first-monitor"));
         assertTrue(text.contains("second-monitor"));
-        assertTrue(text.contains("> 2/3"));
+        assertTrue(text.contains("> 2/4"));
         assertTrue(text.contains("╭"));
         assertTrue(area.positions()
             .anyMatch(position -> buffer.get(position)
@@ -96,9 +142,9 @@ class WorkspaceViewTest {
             var buffer = Buffer.empty(area);
             view(instances, 1, true).render(area, buffer);
             String rendered = text(buffer);
-            int firstRow = rendered.indexOf("1/4") / (width + 1);
-            int secondRow = rendered.indexOf("> 2/4") / (width + 1);
-            int thirdRow = rendered.indexOf("3/4") / (width + 1);
+            int firstRow = rendered.indexOf("1/5") / (width + 1);
+            int secondRow = rendered.indexOf("> 2/5") / (width + 1);
+            int thirdRow = rendered.indexOf("3/5") / (width + 1);
             if (width == 160) {
                 assertEquals(firstRow, secondRow);
                 assertEquals(secondRow, thirdRow);
@@ -126,15 +172,15 @@ class WorkspaceViewTest {
         var buffer = Buffer.empty(area);
         view(instances, 1, true).render(area, buffer);
         String rendered = text(buffer);
-        int monitorRow = rendered.indexOf("> 2/5") / (area.width() + 1);
+        int monitorRow = rendered.indexOf("> 2/6") / (area.width() + 1);
         assertEquals("╭", buffer.get(0, monitorRow)
             .symbol());
         assertEquals("╮", buffer.get(area.width() - 1, monitorRow)
             .symbol());
-        assertTrue(rendered.indexOf("1/5") < rendered.indexOf("> 2/5"));
-        assertTrue(rendered.indexOf("> 2/5") < rendered.indexOf("3/5"));
-        assertEquals(rendered.indexOf("3/5") / (area.width() + 1),
-            rendered.indexOf("4/5") / (area.width() + 1));
+        assertTrue(rendered.indexOf("1/6") < rendered.indexOf("> 2/6"));
+        assertTrue(rendered.indexOf("> 2/6") < rendered.indexOf("3/6"));
+        assertEquals(rendered.indexOf("3/6") / (area.width() + 1),
+            rendered.indexOf("4/6") / (area.width() + 1));
         assertTrue(monitor.budget > 1);
     }
 
@@ -148,7 +194,7 @@ class WorkspaceViewTest {
             String rendered = text(buffer);
             assertTrue(rendered.contains("CONNECTIONS / ACTIVITY"));
             assertFalse(rendered.contains("d details"));
-            assertTrue(rendered.contains("> 1/1"));
+            assertTrue(rendered.contains("> 1/2"));
             assertTrue(rendered.contains("Backend: winmm | inputs=8 outputs=1"));
             assertTrue(rendered.contains("Output: postSSB -> postSSB | open | queue=0 lost=0"));
             assertTrue(rendered.contains("Modules:"));
@@ -190,11 +236,11 @@ class WorkspaceViewTest {
     void compactTerminalCanFocusTheHostWhileStillDrainingHiddenMonitors() {
         var hidden = new ElasticRows();
         var instances = List.of(instance("hidden-monitor", hidden));
-        var area = Rect.of(80, 12);
+        var area = Rect.of(80, 8);
         var buffer = Buffer.empty(area);
         view(instances, 1, true).render(area, buffer);
         assertEquals(1, hidden.budget);
-        assertTrue(text(buffer).contains("> 2/2"));
+        assertTrue(text(buffer).contains("> 2/3"));
         assertTrue(text(buffer).contains("Backend:"));
         assertFalse(text(buffer).contains("hidden-monitor"));
     }
@@ -205,7 +251,7 @@ class WorkspaceViewTest {
         var visible = new ElasticRows();
         var instances = List.of(instance("hidden-monitor", hidden),
             instance("visible-monitor", visible));
-        var area = Rect.of(80, 14);
+        var area = Rect.of(80, 10);
         var buffer = Buffer.empty(area);
         view(instances, 1, true).render(area, buffer);
         assertEquals(1, hidden.budget);
@@ -235,7 +281,7 @@ class WorkspaceViewTest {
         var area = Rect.of(80, 18);
         var buffer = Buffer.empty(area);
         view(instances, 0, false).render(area, buffer);
-        assertTrue(text(buffer).contains("Plain color fallback"));
+        assertFalse(text(buffer).contains("Tab/j/k"));
     }
 
     private static WorkspaceView view(List<Instance> instances, int focused, boolean colors) {

@@ -30,7 +30,9 @@ public final class Workspace {
         Thread.ofPlatform()
             .name("host-controls")
             .factory());
-    private int focused;
+    private int focused = -1;
+    private boolean helpDetails;
+    private final HostPanel.Scroll helpScroll = new HostPanel.Scroll(0);
     private boolean hostDetails;
     private String detailsName;
     private final DetailsView.State detailState = new DetailsView.State();
@@ -86,8 +88,8 @@ public final class Workspace {
                     continue;
                 }
                 List<Instance> instances = host.instances();
-                int selectedIndex = Math.floorMod(focused, instances.size() + 1);
-                Instance selected = selectedIndex == instances.size() ? null
+                int selectedIndex = Math.floorMod(focused, instances.size() + 2);
+                Instance selected = selectedIndex >= instances.size() ? null
                     : instances.get(selectedIndex);
                 if (detailKey(key, instances)) {
                     continue;
@@ -95,7 +97,7 @@ public final class Workspace {
                 switch (key) {
                 case 'q', 3 -> running = false;
                 case 9, 'j' -> focused++;
-                case 'k' -> focused = Math.max(0, focused - 1);
+                case 'k' -> focused--;
                 case 'h' -> {
                     hostDetails = true;
                     focused = instances.size();
@@ -128,7 +130,10 @@ public final class Workspace {
                     monitorAction(selected, MonitorControls::clear);
                 }
                 case 'd' -> {
-                    if (selected != null) {
+                    if (selectedIndex == instances.size() + 1) {
+                        helpDetails = true;
+                        helpScroll.reset();
+                    } else if (selected != null) {
                         detailsName = selected.name();
                         detailState.reset();
                     } else {
@@ -175,6 +180,20 @@ public final class Workspace {
     }
 
     private boolean detailKey(int key, List<Instance> instances) {
+        if (helpDetails) {
+            switch (key) {
+            case 27, 'd' -> helpDetails = false;
+            case '[' -> helpScroll.move(-3);
+            case ']' -> helpScroll.move(3);
+            default -> {
+                return key != 'q'
+                    && key != 'P'
+                    && key != 'r'
+                    && key != 'R';
+            }
+            }
+            return true;
+        }
         if (hostDetails) {
             switch (key) {
             case 27, 'h', 'd' -> hostDetails = false;
@@ -263,8 +282,8 @@ public final class Workspace {
         }
         try {
             List<Instance> instances = host.instances();
-            int index = Math.floorMod(focused, instances.size() + 1);
-            editor.accept(key, index == instances.size() ? Optional.empty()
+            int index = Math.floorMod(focused, instances.size() + 2);
+            editor.accept(key, index >= instances.size() ? Optional.empty()
                 : instances.get(index)
                     .module()
                     .emitterControls());
@@ -275,13 +294,18 @@ public final class Workspace {
 
     private void render(Frame frame) {
         List<Instance> instances = host.instances();
-        focused = Math.floorMod(focused, instances.size() + 1);
-        if (hostDetails
+        focused = Math.floorMod(focused, instances.size() + 2);
+        if (helpDetails
+            || hostDetails
             || detailsName != null) {
             // Keep every hidden monitor/filter capture drained while viewing details.
             instances.forEach(instance -> instance.module()
                 .widget()
                 .lines(1));
+            if (helpDetails) {
+                frame.renderWidget(new KeyboardHelpView(helpScroll, colorTerminal), frame.area());
+                return;
+            }
             if (hostDetails) {
                 frame.renderWidget(
                     new HostDetailsView(host.status(),

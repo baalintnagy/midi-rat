@@ -28,7 +28,7 @@ class WorkspaceTest {
     Path directory;
 
     @ParameterizedTest
-    @ValueSource(strings = { "q", "jdxdhhq", "jjdmmdhhq", "host" })
+    @ValueSource(strings = { "q", "jdxdhhq", "jjdmmdhhq", "host", "help" })
     void rendersTamboWorkspaceAndExitsOnKeyboard(String keys) throws Exception {
         Files.writeString(directory.resolve("application.yaml"),
             """
@@ -70,7 +70,12 @@ class WorkspaceTest {
             }
         };
         var bytes = new ByteArrayOutputStream();
-        String inputKeys = keys.equals("host") ? "\t\tdmmdq" : keys;
+        String inputKeys = switch (keys) {
+        case "host" -> "\t\t\tdmmdq";
+        case "help" -> "d]dq";
+        case "q" -> keys;
+        default -> "j%s".formatted(keys);
+        };
         try (var diagnostics = new Diagnostics(directory.resolve("logs"));
             var host = new Host(app, midi, diagnostics, System.nanoTime());
             var terminal = TerminalBuilder.builder()
@@ -90,10 +95,16 @@ class WorkspaceTest {
         assertTrue(screen.contains("MIDIRat"), screen);
         assertTrue(screen.contains("manual"), screen);
         assertTrue(screen.contains("monitor"), screen);
+        if (keys.equals("q")) {
+            assertTrue(screen.contains(">MIDIRat"), screen);
+        }
         if (keys.equals("host")) {
-            assertTrue(screen.contains(">3/3"), screen);
+            assertTrue(screen.contains(">3/4"), screen);
             assertTrue(screen.contains("APPLICATIONCONFIGURATION"), screen);
             assertTrue(screen.contains("NETWORKCONFIGURATION"), screen);
+        } else if (keys.equals("help")) {
+            assertTrue(screen.contains("Keyboardhelp"), screen);
+            assertTrue(screen.contains("Ctrl+P"), screen);
         } else if (keys.length() > 1) {
             assertTrue(screen.contains(keys.startsWith("jj") ? "BlockedLOG" : "MessagesLOG"),
                 screen);

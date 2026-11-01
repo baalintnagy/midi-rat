@@ -1268,7 +1268,13 @@ explicit reload/reconnect/Panic/exit controls, and emitter Send/Save actions.
 Widgets use host-owned UI scheduling and release resources when their instance stops.
 
 **[User presentation addition, 30 October 2026; design completion D18]** Group the
-application title and keyboard hints with clear spacing. Present module widgets inside
+application title and keyboard hints with clear spacing.
+**[User revision, 1 November 2026]** Replace the top title/help panel with a single-line
+focusable title, with a single-line dark-gray separator beneath it and initial focus on
+the title. The separator keeps its gray color when the title is focused.
+Include it in workspace focus navigation; `d` opens full-screen keyboard
+help, Esc/`d` returns, and `[`/`]` scrolls help. Preserve active emitter editor input
+above the widgets. Present module widgets inside
 rounded borders. Present connection status in a focusable bordered host widget below
 the modules. Keep active editor input visible above the widgets. Highlight the focused widget
 with a cyan border and a textual focus marker; show its position, name, and type
