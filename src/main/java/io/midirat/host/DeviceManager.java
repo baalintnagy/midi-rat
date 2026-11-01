@@ -191,38 +191,42 @@ public final class DeviceManager implements AutoCloseable {
                     if (submission == null) {
                         continue;
                     }
-                    if (!available) {
-                        lost.add(submission.messages()
-                            .size());
-                        errors.accept("Unavailable output %s rejected %d queued messages"
-                            .formatted(port.name(), submission.messages()
-                                .size()));
-                        continue;
-                    }
-                    int sent = 0;
-                    try {
-                        for (MidiMessage message : submission.messages()) {
-                            long before = System.nanoTime() - origin;
-                            output.send(message);
-                            latency.record(Math.max(0, before - submission.receipt()));
-                            sent++;
-                        }
-                    } catch (RuntimeException exception) {
-                        available = false;
-                        lost.add(submission.messages()
-                            .size() - sent);
-                        errors
-                            .accept("Output %s unavailable; %s sent %d/%d: %s; reconnect explicitly"
-                                .formatted(port.name(), submission.destination(), sent,
-                                    submission.messages()
-                                        .size(),
-                                    exception.getMessage()));
-                    }
+                    deliver(submission);
                 } catch (InterruptedException _) {
                     Thread.currentThread()
                         .interrupt();
                     break;
                 }
+            }
+        }
+
+        private void deliver(Submission submission) {
+            if (!available) {
+                lost.add(submission.messages()
+                    .size());
+                errors.accept("Unavailable output %s rejected %d queued messages"
+                    .formatted(port.name(), submission.messages()
+                        .size()));
+                return;
+            }
+            int sent = 0;
+            try {
+                for (MidiMessage message : submission.messages()) {
+                    long before = System.nanoTime() - origin;
+                    output.send(message);
+                    latency.record(Math.max(0, before - submission.receipt()));
+                    sent++;
+                }
+            } catch (RuntimeException exception) {
+                available = false;
+                lost.add(submission.messages()
+                    .size() - sent);
+                errors
+                    .accept("Output %s unavailable; %s sent %d/%d: %s; reconnect explicitly"
+                        .formatted(port.name(), submission.destination(), sent,
+                            submission.messages()
+                                .size(),
+                            exception.getMessage()));
             }
         }
 

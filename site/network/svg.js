@@ -27,9 +27,10 @@ function shorten(value, width) {
 
 export function renderSvg(model, layout) {
     const nodes = new Map(model.nodes.map((node) => [node.id, node]));
+    const edges = new Map(model.edges.map((edge) => [edge.id, edge]));
     const paths = (layout.edges ?? [])
         .map((edge) => {
-            const reference = model.edges.find((item) => item.id === edge.id);
+            const reference = edges.get(edge.id);
             return (edge.sections ?? [])
                 .map((section) => {
                     const points = [

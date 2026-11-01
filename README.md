@@ -2,52 +2,16 @@
 
 MIDI Rat is a terminal application for routing, inspecting, filtering, and transforming
 MIDI messages. Connect physical ports through named buses, observe traffic and chords,
-emulate sustain/sostenuto pedals, and send messages manually. Configuration and wiring
-use YAML.
+and send messages manually. Configuration and wiring use YAML.
 
 The terminal workspace provides live counters, colored message logs, adaptive module
 columns, and full-screen details. Modules run independently on bounded queues; terminal
 rendering does not run on the MIDI processing workers.
 
-## Network viewer
-
-The GitHub Pages network viewer turns network YAML into an interactive signal-flow
-diagram. Browse or drop a network file onto the page; optionally add its application
-YAML to see physical device bindings and the selected backend. Files are parsed locally
-in your browser and are never uploaded.
-
-Select nodes to inspect module settings and connections, switch between horizontal and
-vertical layouts, zoom with Ctrl+scroll around the pointer or the zoom slider, pan,
-and export a standalone SVG. Edit YAML with syntax highlighting in the diagram panel's
-YAML editor tab and apply it to redraw the network. Its separate Editor zoom slider
-adjusts the font size from 10 to 32 pixels. Built-in examples cover
-pedals and chords, transposition, and a setup requiring no hardware. The viewer checks
-structure and wiring; use `MidiRat.exe --config ... --validate` for module validation.
-
-Run the viewer locally with Node.js 24:
-
-```powershell
-cd site
-npm ci
-npm run dev
-```
-
-Open `http://127.0.0.1:4174`. Run `npm test`, `npm run lint`, and `npm run format:check`
-to verify changes.
-The site uses plain HTML, CSS, and JavaScript modules, with YAML parsing by `yaml`,
-diagram layout by ELK.js, and pan/zoom by Panzoom. Runtime dependencies are pinned and
-vendored with their licenses; `npm run vendor` refreshes them after dependency updates.
-
-To publish, select **Settings → Pages → Build and deployment → Source: GitHub Actions**
-in the repository. After the site changes reach `main`, the **Verify and deploy network
-viewer** workflow checks and deploys the static site. It can also be run manually from
-Actions. The project Pages address is `https://baalintnagy.github.io/midi-rat/` once deployed.
-Pull requests run checks without deploying. Only the site's runtime files are published.
-
 ## Quick start
 
 On Windows, extract the portable distribution and open an interactive terminal in its
-`MidiRat` directory. The distribution includes its Java runtime and the sostenuto plugin.
+`MidiRat` directory. The distribution includes its Java runtime and bundled plugins.
 
 ```powershell
 .\MidiRat.exe --help
@@ -74,7 +38,6 @@ List available device names and IDs before creating physical bindings:
 | `midi-chord` | Recognize chords from all held notes reaching the instance. |
 | `midi-emitter` | Edit, send, and explicitly save a sequence of MIDI messages. |
 | `midi-remap` | Apply ordered channel, note, controller, value-curve, or substitution rules. |
-| `sostenuto` | Emulate sustain and sostenuto before forwarding messages to an instrument. |
 
 Application configuration selects the backend, physical port bindings, module directory,
 and network file. Network configuration declares buses, module instances, subscriptions,
@@ -193,42 +156,6 @@ This application file uses the same network as the keyboard/synth example. The p
 Windows distribution includes bridge DLLs, but does not install Windows MIDI Services.
 A missing backend prerequisite produces an error rather than selecting another backend.
 
-## Emulate sustain and sostenuto
-
-Keep the keyboard/synth application file and replace `network-example.yaml` with this
-network. The sostenuto processor receives the keyboard's notes and pedal messages,
-then forwards its output to both the synthesizer and the observers. The chord display
-therefore follows the processed notes, including retained releases.
-
-```yaml
-schemaVersion: 1
-network:
-  buses: [processed]
-  modules:
-    - name: pedals
-      type: sostenuto
-      sources: [keyboard]
-      destinations: [processed, synth]
-      settings: {}
-    - name: monitor
-      type: midi-monitor
-      sources: [processed]
-      settings: {historyLimit: 2000, colors: true}
-    - name: chords
-      type: midi-chord
-      sources: [processed]
-      settings: {}
-```
-
-CC64 controls sustain and CC66 controls sostenuto. Sustain holds releases; sostenuto
-captures notes already held when it engages. The processor consumes these pedal
-messages while forwarding other ordinary MIDI. CC22 is an additional default sostenuto
-trigger. The trigger can instead use a configured CC or note, with momentary or toggle
-behavior. Each instance has independent state.
-
-Sostenuto is an external module. Its `sostenuto.jar` must be present in the configured
-`moduleDirectory`; the portable distribution and root Maven build install it there.
-
 ## Transpose notes
 
 This alternative `network-example.yaml` raises notes by one octave before sending them
@@ -298,7 +225,7 @@ focus an emitter and press `v` to use it. Saving refuses conflicting external ed
 and sending never saves automatically.
 
 Backend and application binding changes require a restart. Network reload and module
-replacement do not migrate pedal/chord state. Reload, reconnect, module removal, and
+replacement do not migrate module state. Reload, reconnect, module removal, and
 exit do not send automatic note cleanup; Panic is an explicit action. MIDI processing,
 message capture, and diagnostic queues are bounded, and their loss counts remain
 visible. Terminal rendering and synthetic tests do not establish hardware latency.
@@ -319,7 +246,7 @@ mvn --batch-mode --no-transfer-progress clean verify
 ```
 
 The build downloads checksum-pinned native SDK dependencies. On Windows x64, `verify`
-builds and checks the host, the external sostenuto JAR, and the portable application.
+builds and checks the host, external module JARs, and the portable application.
 For Java-only development without Windows packaging:
 
 ```powershell
@@ -329,8 +256,6 @@ mvn --batch-mode --no-transfer-progress '-P!windows-package' verify
 | Output | Location |
 | --- | --- |
 | Executable host JAR | `target/midi-rat-0.2.0.jar` |
-| External sostenuto JAR | `extensions/sostenuto/target/sostenuto.jar` |
-| Development plugin copy | `modules/sostenuto.jar` |
 | Windows application and runtime | `target/jpackage-out/MidiRat/` |
 
 Run the source build with an installed JDK 25:
@@ -346,8 +271,8 @@ Create a distributable ZIP after a successful Windows build:
 Compress-Archive -Path .\target\jpackage-out\MidiRat\* -DestinationPath .\target\MidiRat-windows.zip -Force
 ```
 
-The Maven reactor contains `application` for the host, `extensions/sostenuto` for the
-plugin, and `distribution` for packaging. The host remains built from `src`. VS Code
+The Maven reactor contains `application` for the host, external modules under
+`extensions/`, and `distribution` for packaging. The host remains built from `src`. VS Code
 includes Java launch configurations and tasks for Java builds, the native bridge,
 and the Windows distribution; adjust configured JDK paths to your installation.
 

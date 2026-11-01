@@ -1,11 +1,11 @@
-import Panzoom from './vendor/panzoom.js';
 import { stringify } from './vendor/yaml/index.js';
 import { MAX_FILE_SIZE, parseYaml, selectDocuments } from './network/yaml.js';
 import { buildNetwork } from './network/model.js';
 import { layoutNetwork } from './network/layout.js';
 import { renderSvg } from './network/svg.js';
 import { examples } from './network/examples.js';
-import { zoomAtPoint } from './network/zoom.js';
+import { createDiagramViewport } from './ui/diagram-viewport.js';
+import { createYamlEditor } from './ui/yaml-editor.js';
 
 const element = (id) => document.getElementById(id);
 const state = {
@@ -13,58 +13,23 @@ const state = {
     networkName: null,
     applicationName: null,
     model: null,
-    layout: null,
     svg: '',
     example: true,
     revision: 0,
     abort: null,
-    panzoom: null,
 };
 const viewport = element('viewport');
 const graph = element('graph');
-const editor = window.ace.edit('source-text', {
-    mode: 'ace/mode/yaml',
-    theme: 'ace/theme/tomorrow_night',
-    tabSize: 2,
-    useSoftTabs: true,
-    showPrintMargin: false,
-    fontSize: 14,
-});
-editor.session.setUseWorker(false);
-
-function showPanel(yaml) {
-    for (const name of ['diagram', 'yaml']) {
-        const active = (name === 'yaml') === yaml;
-        element(`${name}-panel`).hidden = !active;
-        element(`${name}-tab`).setAttribute('aria-selected', String(active));
-        element(`${name}-tab`).tabIndex = active ? 0 : -1;
-    }
-    if (yaml) {
-        editor.resize();
-    } else {
-        requestAnimationFrame(fit);
-    }
-}
-for (const name of ['diagram', 'yaml']) {
-    element(`${name}-tab`).addEventListener('click', () => showPanel(name === 'yaml'));
-    element(`${name}-tab`).addEventListener('keydown', (event) => {
-        if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-            event.preventDefault();
-            const yaml = event.key === 'End' || (event.key !== 'Home' && name === 'diagram');
-            showPanel(yaml);
-            element(`${yaml ? 'yaml' : 'diagram'}-tab`).focus();
-        }
-    });
-}
-
+const diagram = createDiagramViewport(viewport, graph, element);
+const fit = () => diagram.fit();
+const editor = createYamlEditor(window.ace, element, fit);
 function message(text) {
     element('canvas-message').textContent = text;
     element('canvas-message').hidden = !text;
 }
 
 function resetDiagram() {
-    state.panzoom?.destroy();
-    state.panzoom = null;
+    diagram.clear();
     state.model = null;
     state.svg = '';
     graph.replaceChildren();
@@ -144,23 +109,6 @@ function showError(error) {
     message('Could not draw this network. Check the configuration above.');
 }
 
-function fit() {
-    if (!state.panzoom || !state.layout || !viewport.clientWidth || !viewport.clientHeight) {
-        return;
-    }
-    const { width, height } = state.layout;
-    const scale = Math.max(
-        0.05,
-        Math.min((viewport.clientWidth - 64) / width, (viewport.clientHeight - 90) / height, 1.35),
-    );
-    state.panzoom.zoom(scale, { animate: false, force: true });
-    state.panzoom.pan(
-        (viewport.clientWidth / scale - width) / 2,
-        (viewport.clientHeight / scale - height) / 2,
-        { animate: false, force: true },
-    );
-}
-
 function statistics(model) {
     const counts = ['input', 'module', 'bus', 'output'].map((kind) => [
         kind,
@@ -191,7 +139,7 @@ async function draw() {
     element('diagram-name').textContent = 'Network';
     if (!state.files.length) {
         element('file-selectors').hidden = true;
-        editor.setValue('', -1);
+        editor.setValue('');
         message('Drop a network YAML file, or load an example to get started.');
         viewport.setAttribute('aria-busy', 'false');
         return;
@@ -200,7 +148,7 @@ async function draw() {
     viewport.setAttribute('aria-busy', 'true');
     const currentFile = state.files.find((file) => file.name === state.networkName);
     if (currentFile) {
-        editor.setValue(currentFile.text, -1);
+        editor.setValue(currentFile.text);
     }
     try {
         const documents = state.files.map((file) => parseYaml(file.text, file.name));
@@ -214,7 +162,7 @@ async function draw() {
         state.applicationName = application?.name ?? '';
         element('network-select').value = state.networkName;
         element('application-select').value = state.applicationName;
-        editor.setValue(network.text, -1);
+        editor.setValue(network.text);
         const model = buildNetwork(network, application);
         element('diagram-name').textContent = network.name;
         statistics(model);
@@ -231,18 +179,12 @@ async function draw() {
             return;
         }
         state.model = model;
-        state.layout = layout;
         state.svg = renderSvg(model, layout);
         // All configuration text is escaped by the SVG renderer; no uploaded markup is used.
         graph.innerHTML = state.svg;
         graph.style.width = `${layout.width}px`;
         graph.style.height = `${layout.height}px`;
-        state.panzoom = Panzoom(graph, {
-            canvas: true,
-            origin: '0 0',
-            minScale: 0.05,
-            maxScale: 4,
-        });
+        diagram.attach(layout);
         requestAnimationFrame(() =>
             requestAnimationFrame(() => {
                 if (revision === state.revision) {
@@ -319,7 +261,8 @@ function inspect(id) {
     if (!state.model) {
         return;
     }
-    const node = state.model.nodes.find((candidate) => candidate.id === id);
+    const nodes = new Map(state.model.nodes.map((node) => [node.id, node]));
+    const node = nodes.get(id);
     if (!node) {
         return;
     }
@@ -349,13 +292,7 @@ function inspect(id) {
     const linked = (side) =>
         state.model.edges
             .filter((edge) => edge[side] === id)
-            .map(
-                (edge) =>
-                    state.model.nodes.find(
-                        (candidate) =>
-                            candidate.id === edge[side === 'target' ? 'source' : 'target'],
-                    ).name,
-            );
+            .map((edge) => nodes.get(edge[side === 'target' ? 'source' : 'target']).name);
     const connections = element('node-connections');
     connections.replaceChildren();
     for (const [label, names] of [
@@ -435,47 +372,9 @@ element('apply-source').addEventListener('click', () => {
     state.networkName = name;
     state.example = false;
     draw();
-    showPanel(false);
+    editor.showDiagram();
 });
 element('direction').addEventListener('change', draw);
-function zoomAt(scale, clientX, clientY) {
-    if (!state.panzoom) {
-        return;
-    }
-    const bounds = viewport.getBoundingClientRect();
-    zoomAtPoint(state.panzoom, scale, {
-        x: clientX - bounds.left - viewport.clientLeft,
-        y: clientY - bounds.top - viewport.clientTop,
-    });
-}
-viewport.addEventListener(
-    'wheel',
-    (event) => {
-        if (!event.ctrlKey || !state.panzoom || event.target.closest('.zoom-tools')) {
-            return;
-        }
-        event.preventDefault();
-        const delta =
-            event.deltaY *
-            (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1);
-        zoomAt(state.panzoom.getScale() * Math.exp(-delta * 0.002), event.clientX, event.clientY);
-    },
-    {
-        passive: false,
-    },
-);
-graph.addEventListener('panzoomchange', (event) => {
-    element('zoom-label').textContent = `${Math.round(event.detail.scale * 100)}%`;
-    element('zoom-slider').value = Math.round(event.detail.scale * 100);
-});
-element('zoom-slider').addEventListener('input', (event) => {
-    const bounds = viewport.getBoundingClientRect();
-    zoomAt(
-        Number(event.target.value) / 100,
-        bounds.left + viewport.clientLeft + viewport.clientWidth / 2,
-        bounds.top + viewport.clientTop + viewport.clientHeight / 2,
-    );
-});
 graph.addEventListener('click', (event) => {
     const node = event.target.closest('[data-node]');
     if (node) {
@@ -492,34 +391,6 @@ graph.addEventListener('keydown', (event) => {
         inspect(node.dataset.node);
     }
 });
-element('fit').addEventListener('click', fit);
-for (const [id, factor] of [
-    ['zoom-in', 1.25],
-    ['zoom-out', 0.8],
-]) {
-    element(id).addEventListener('click', () => {
-        if (!state.panzoom) {
-            return;
-        }
-        const bounds = viewport.getBoundingClientRect();
-        zoomAt(
-            state.panzoom.getScale() * factor,
-            bounds.left + viewport.clientLeft + viewport.clientWidth / 2,
-            bounds.top + viewport.clientTop + viewport.clientHeight / 2,
-        );
-    });
-}
-element('editor-zoom').addEventListener('input', (event) => {
-    const size = Number(event.target.value);
-    editor.setFontSize(size);
-    editor.resize();
-    element('editor-zoom-label').textContent = `${size}px`;
-});
-new ResizeObserver(() => {
-    if (state.panzoom) {
-        requestAnimationFrame(fit);
-    }
-}).observe(viewport);
 element('download').addEventListener('click', () => {
     if (!state.svg) {
         return;
