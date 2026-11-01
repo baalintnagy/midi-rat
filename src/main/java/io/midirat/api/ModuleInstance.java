@@ -21,6 +21,10 @@ public interface ModuleInstance extends AutoCloseable {
         return ModuleWidget.fixed(this::widgetLines);
     }
 
+    default ModuleDetails details() {
+        return ModuleDetails.of(widget(), monitorControls());
+    }
+
     default Optional<EmitterControls> emitterControls() {
         return Optional.empty();
     }

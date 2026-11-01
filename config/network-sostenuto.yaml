@@ -2,7 +2,7 @@ schemaVersion: 1
 network:
   buses: [musical-input, sostenuto-output]
   modules:
-    - name: musical-inputs
+    - name: M-IN
       type: midi-message-filter
       sources:
         - hammer-main
@@ -22,13 +22,13 @@ network:
           - type: CH_PR
           - type: POLY_AT
           - type: PC
-    - name: input-monitor
+    - name: MON
       type: midi-monitor
       sources: [musical-input]
       settings:
         historyLimit: 2000
         colors: true
-    - name: piano-pedals
+    - name: SOS
       type: sostenuto
       sources: [musical-input]
       destinations: [sostenuto-output, postSSB]
@@ -44,11 +44,11 @@ network:
           enabled: true
           delayMs: 1
           tailMs: 1
-    - name: sounding-chord
+    - name: CHRD
       type: midi-chord
       sources: [sostenuto-output]
       settings: {}
-    - name: manual-postSSB
+    - name: EMT
       type: midi-emitter
       destinations: [postSSB]
       settings:

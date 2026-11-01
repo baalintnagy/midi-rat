@@ -34,7 +34,7 @@ class ChordTest {
         for (int note = 60; note <= 71; note++) {
             send(module, bus, bus, 0x80, note, 0);
         }
-        assertEquals(List.of("Chord: --", "Note names: --", "Held MIDI notes: --"),
+        assertEquals(List.of("Chord: --", "Notes: --"),
             module.widgetLines());
         for (int note : List.of(62, 65, 69)) {
             send(module, bus, bus, 0x90, note, 100);
@@ -102,14 +102,14 @@ class ChordTest {
         assertTrue(module.widgetLines()
             .getFirst()
             .contains("CM"));
-        assertEquals("Held MIDI notes: 60, 64, 67", module.widgetLines()
-            .get(2));
-        assertEquals("Note names: C, E, G", module.widgetLines()
-            .get(1));
+        assertEquals(2, module.widgetLines()
+            .size());
+        assertEquals("Notes: C, E, G", module.widgetLines()
+            .getLast());
         send(module, source, source, 0xB0, 64, 127);
         send(module, source, source, 0x80, 60, 0);
-        assertEquals("Held MIDI notes: 64, 67", module.widgetLines()
-            .get(2));
+        assertEquals("Notes: E, G", module.widgetLines()
+            .getLast());
     }
 
     @Test
@@ -119,8 +119,8 @@ class ChordTest {
         send(module, source, source, 0x90, 60, 100);
         send(module, source, source, 0x91, 64, 100);
         send(module, source, source, 0xB0, 123, 0);
-        assertEquals("Held MIDI notes: 64", module.widgetLines()
-            .get(2));
+        assertEquals("Notes: E", module.widgetLines()
+            .getLast());
         send(module, source, source, 0xB1, 120, 0);
         assertEquals("Chord: --", module.widgetLines()
             .getFirst());
@@ -133,11 +133,11 @@ class ChordTest {
         send(module, source, source, 0x90, 60, 100);
         send(module, source, source, 0x91, 60, 100);
         send(module, source, source, 0x80, 60, 0);
-        assertEquals("Held MIDI notes: 60", module.widgetLines()
-            .get(2));
+        assertEquals("Notes: C", module.widgetLines()
+            .getLast());
         send(module, source, source, 0x91, 60, 0);
-        assertEquals("Held MIDI notes: --", module.widgetLines()
-            .get(2));
+        assertEquals("Notes: --", module.widgetLines()
+            .getLast());
     }
 
     @Test
@@ -147,10 +147,8 @@ class ChordTest {
         for (int note : List.of(127, 72, 61, 0)) {
             send(module, source, source, 0x90, note, 100);
         }
-        assertEquals("Held MIDI notes: 0, 61, 72, 127", module.widgetLines()
-            .get(2));
-        assertEquals("Note names: C, (C#,Db), C, G", module.widgetLines()
-            .get(1));
+        assertEquals(List.of("Chord: unrecognized", "Notes: C, (C#,Db), C, G"),
+            module.widgetLines());
     }
 
     private static void send(ChordModule module, Endpoint source, Endpoint origin,

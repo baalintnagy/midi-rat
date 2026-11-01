@@ -1,4 +1,4 @@
-package io.midirat.module;
+package io.midirat.sostenuto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,11 +9,7 @@ import io.midirat.api.ModuleInstance;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MessageType;
 import io.midirat.midi.MidiMessage;
-import io.midirat.sostenuto.SostenutoSettings;
-import io.midirat.sostenuto.SostenutoState;
 import io.midirat.sostenuto.SostenutoState.Status;
-import io.midirat.sostenuto.SostenutoTrigger;
-import io.midirat.sostenuto.Umbrella;
 
 /** Adapter for input mapping, the pedal state machine, and optional timed forwarding. */
 public final class SostenutoModule implements ModuleInstance {

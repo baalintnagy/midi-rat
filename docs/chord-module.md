@@ -12,10 +12,11 @@ includes it; both WinMM and Windows MIDI Services launch configurations use it.
 ```
 
 No destinations are allowed. Each instance has independent state and displays the
-library's candidate names in order, followed by `Note names` and then `Held MIDI notes`.
-Note names use the monitor's pitch-class labels: `C`, `D`, etc., and both enharmonic
+library's candidate names in order, followed by a single `Notes` line.
+Notes use the monitor's pitch-class labels: `C`, `D`, etc., and both enharmonic
 spellings for accidentals such as `(C#,Db)`. Labels follow the same order as the
-numeric MIDI pitches; different octaves can therefore show the same label. `--` means
+held MIDI pitches; different octaves can therefore show the same label. Numeric MIDI
+codes are not displayed. `--` means
 no held notes; `unrecognized` means the library found no chord for the current set.
 Inversions retain the lowest held pitch as bass.
 

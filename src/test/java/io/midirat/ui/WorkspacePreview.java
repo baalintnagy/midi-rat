@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -16,10 +17,18 @@ import dev.tamboui.layout.Rect;
 import io.midirat.api.ModuleContext;
 import io.midirat.api.ModuleInstance;
 import io.midirat.api.SourceNames;
+import io.midirat.config.ApplicationConfig;
 import io.midirat.config.NetworkConfig.Instance;
+import io.midirat.config.Value;
+import io.midirat.host.DeviceManager;
+import io.midirat.host.HostConfiguration;
+import io.midirat.host.HostStatus;
+import io.midirat.host.RoutingEngine;
 import io.midirat.midi.Endpoint;
 import io.midirat.midi.Envelope;
+import io.midirat.midi.MessageCodec;
 import io.midirat.midi.MidiMessage;
+import io.midirat.module.Builtins;
 import io.midirat.module.MonitorModule;
 
 /** Optional visual QA: rasterizes the actual TamboUI buffer, without opening MIDI ports. */
@@ -33,7 +42,7 @@ public final class WorkspacePreview {
         var origin = new Endpoint("hammer-main", Endpoint.Kind.INPUT);
         var source = new Endpoint("musical-input", Endpoint.Kind.BUS);
         var monitor = new MonitorModule(2000, true);
-        monitor.start(new ModuleContext() {
+        var context = new ModuleContext() {
             @Override
             public SourceNames sourceNames() {
                 return new SourceNames(List.of("Hammer 88 Pro [group 1]"),
@@ -47,7 +56,25 @@ public final class WorkspacePreview {
             @Override
             public void report(String diagnostic) {
             }
-        });
+        };
+        monitor.start(context);
+        var settings = Value.read(Path.of("config/network-sostenuto-launchpad.yaml"))
+            .mapping()
+            .get("network")
+            .mapping()
+            .get("modules")
+            .list()
+            .getFirst()
+            .mapping()
+            .get("settings");
+        var filter = Builtins.providers()
+            .stream()
+            .filter(provider -> provider.type()
+                .equals("midi-message-filter"))
+            .findFirst()
+            .orElseThrow()
+            .prepare(settings, List.of(origin));
+        filter.start(context);
         for (int i = 0; i < 36; i++) {
             var message = switch (i % 6) {
             case 0 -> MidiMessage.shortMessage(0x90, 60, 100);
@@ -59,31 +86,65 @@ public final class WorkspacePreview {
             };
             monitor.process(new Envelope(source, 1_234_567_890_123L + i * 1_000_000, message,
                 origin, "Hammer 88 Pro [group 1]"));
+            filter.process(new Envelope(origin, 1_234_567_890_123L + i * 1_000_000, message,
+                origin, "Hammer 88 Pro [group 1]"));
         }
         var instances = List.of(
-            fixed("musical-inputs", "midi-message-filter",
-                "Filter: 6 whitelist, 0 blacklist rules"),
-            new Instance("input-monitor", "midi-monitor", List.of(source), List.of(), monitor),
-            fixed("piano-pedals", "sostenuto",
+            new Instance("M-IN", "midi-message-filter", List.of(origin), List.of(source),
+                filter),
+            new Instance("MON", "midi-monitor", List.of(source), List.of(), monitor),
+            fixed("SOS", "sostenuto",
                 "Sustain channels: 1 | Sostenuto channels: 1 | Umbrella: on",
                 "Pressed: 3 | Latched: 4 | Retained note-offs: 2"),
-            fixed("sounding-chord", "midi-chord", "Chord: Cmaj7 | Em/C",
-                "Note names: C, C, E, G, B", "Held MIDI notes: 48, 60, 64, 67, 71"));
-        var status = List.of(
-            """
-            windows-midi-services | inputs=8 outputs=1 | submission n=128 \
-            median=2200 p95=4100 p99=6500 max=8100 ns\
-            """
-            ,
-            "postSSB -> postSSB [group 1] [open] queue=0 lost=0",
-            "musical-inputs [active] queue=0 lost=0",
-            "input-monitor [active] queue=0 lost=0",
-            "piano-pedals [active] queue=0 lost=0",
-            "sounding-chord [active] queue=0 lost=0");
-        new WorkspaceView(status, instances, 1,
-            List.of("Network activated: 4 instances; no automatic MIDI cleanup",
-                "Connected 8 inputs and 1 output handles on windows-midi-services"),
-            0, new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
+            fixed("CHRD", "midi-chord", "Chord: Cmaj7 | Em/C",
+                "Notes: C, C, E, G, B"));
+        var status = new HostStatus(new HostStatus.Devices("windows-midi-services", 8, 1,
+            "submission n=128 median=2200 p95=4100 p99=6500 max=8100 jitter(p99-median)=4300 ns",
+            List.of(new HostStatus.Connection("postSSB", "postSSB [group 1]", true, 0, 0))),
+            List.of(origin, source), instances.stream()
+                .map(instance -> new HostStatus.Route(instance.name(), true, 0, 0))
+                .toList());
+        filter
+            .process(new Envelope(origin, 1_234_604_890_123L, MessageCodec.parse("hex", "F8"),
+                origin, "Hammer 88 Pro [group 1]"));
+        if (args.length > 0
+            && args[0].startsWith("host")) {
+            if (args[0].equals("host")) {
+                new WorkspaceView(status, instances, instances.size(),
+                    new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
+            } else {
+                var app = ApplicationConfig
+                    .read(Path.of("config/wms-application-sostenuto-launchpad.yaml"));
+                var configuration = new HostConfiguration(app, Files.readAllLines(app.file()),
+                    Files.readAllLines(app.network()), Builtins.providers()
+                        .stream()
+                        .map(provider -> new HostConfiguration.Provider(provider.type(),
+                            provider.version(), provider.apiVersion(), provider.role()))
+                        .toList(),
+                    RoutingEngine.PROCESSING_CAPACITY, DeviceManager.OUTPUT_CAPACITY);
+                var state = new HostDetailsView.State();
+                if (args[0].equals("host-configuration")) {
+                    state.nextPage();
+                }
+                new HostDetailsView(status, HostConfigurationFormat.lines(configuration),
+                    List.of("Network activated", "Connected 8 inputs and 1 output"), 0,
+                    state, true).render(area, buffer);
+            }
+        } else if (args.length > 0) {
+            if (!args[0].equals("rules")) {
+                filter.details()
+                    .nextMode();
+            }
+            if (args[0].equals("blocked")) {
+                filter.details()
+                    .nextMode();
+            }
+            new DetailsView("M-IN", "midi-message-filter", filter.details(),
+                new DetailsView.State(), true).render(area, buffer);
+        } else {
+            new WorkspaceView(status, instances, 1,
+                new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
+        }
         Font font = new Font("Consolas", Font.PLAIN, 15);
         int cellWidth = 9;
         int cellHeight = 21;
@@ -110,7 +171,9 @@ public final class WorkspacePreview {
         } finally {
             graphics.dispose();
         }
-        Path output = Path.of("target/workspace-preview.png");
+        String name = args.length == 0 ? "workspace"
+            : args[0].startsWith("host") ? args[0] : "filter-%s".formatted(args[0]);
+        Path output = Path.of("target/%s-preview.png".formatted(name));
         ImageIO.write(image, "png", output.toFile());
         System.out.println(output.toAbsolutePath());
     }

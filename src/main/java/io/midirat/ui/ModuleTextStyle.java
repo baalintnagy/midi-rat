@@ -33,6 +33,12 @@ final class ModuleTextStyle {
         if (!colors) {
             return Line.from(text);
         }
+        if (text.startsWith("●")
+            || text.startsWith("○")) {
+            return Line.from(span(text.substring(0, 1),
+                text.startsWith("●") ? Color.LIGHT_GREEN : Color.DARK_GRAY, true))
+                .append(render(text.substring(1), true));
+        }
         if (text.startsWith("CH:")) {
             return MonitorRowStyle.render(text, true);
         }

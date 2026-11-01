@@ -5,6 +5,14 @@ Compile against the MIDI Rat JAR with JDK 25. Include a UTF-8 service descriptor
 `META-INF/services/io.midirat.api.ModuleProvider` containing provider class names.
 Install the JAR in the application's configured module directory.
 
+The bundled sostenuto processor is an external provider in `extensions/sostenuto`.
+Its Maven dependency on the host is `provided`: the plugin JAR contains only its
+implementation and service descriptor, without a second copy of the API or host.
+The root reactor builds and installs it into `modules/sostenuto.jar`; the Windows
+distribution copies it to its own `modules` directory. Other built-in modules remain
+inside the host. Build both with `mvn package`, or run the complete checks with
+`mvn verify` from the repository root.
+
 `ModuleProvider` declares `type()`, `version()`, `apiVersion()` (1), `role()`
 (`PROCESSOR`, `MONITOR`, `EMITTER`), and
 `prepare(Value settings, List<Endpoint> subscriptions)` returning a `ModuleInstance`.
@@ -53,6 +61,14 @@ known to the network, for validating origin selectors before activation.
 `ModuleWidget` with rendering, color preference, and elastic-height policy. Its
 default adapter still calls legacy `widgetLines()`, so existing providers retain
 their fixed-height behavior without implementing the new optional methods.
+
+`details()` returns `ModuleDetails` for a dedicated full-screen view. Its default
+adapter presents the ordinary widget and monitor controls, preserving existing
+providers. Override it to supply an `informationTitle()` and `information()` rows
+(for example validated filter YAML), a `content()` widget, optional log `mode()` /
+`nextMode()`, and optional monitor `controls()`. The host owns navigation, scrolling,
+layout, and colors; these callbacks run on the UI thread. Captures must use bounded,
+nonblocking handoffs. This is an additive API-version-1 extension with defaults.
 
 `EmitterControls.snapshot()` returns an immutable `Sequence(format, messages)`.
 The built-in emitter validates and publishes an entire sequence atomically; compile,

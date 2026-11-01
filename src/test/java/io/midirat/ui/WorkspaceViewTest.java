@@ -13,6 +13,7 @@ import dev.tamboui.style.Color;
 import io.midirat.api.ModuleInstance;
 import io.midirat.api.ModuleWidget;
 import io.midirat.config.NetworkConfig.Instance;
+import io.midirat.host.HostStatus;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MidiMessage;
 import org.junit.jupiter.api.Test;
@@ -64,7 +65,7 @@ class WorkspaceViewTest {
         String text = text(buffer);
         assertTrue(text.contains("first-monitor"));
         assertTrue(text.contains("second-monitor"));
-        assertTrue(text.contains("> 2/2"));
+        assertTrue(text.contains("> 2/3"));
         assertTrue(text.contains("╭"));
         assertTrue(area.positions()
             .anyMatch(position -> buffer.get(position)
@@ -88,16 +89,16 @@ class WorkspaceViewTest {
         var instances = List.of(
             instance("filter", ModuleWidget.fixed(() -> List.of("Filter: 6 rules"))),
             instance("chord",
-                ModuleWidget.fixed(() -> List.of("Chord: CM", "Note names: C, E, G"))),
+                ModuleWidget.fixed(() -> List.of("Chord: CM", "Notes: C, E, G"))),
             instance("emitter", ModuleWidget.fixed(() -> List.of("Messages: 0"))));
         for (int width : List.of(60, 160)) {
             var area = Rect.of(width, 30);
             var buffer = Buffer.empty(area);
             view(instances, 1, true).render(area, buffer);
             String rendered = text(buffer);
-            int firstRow = rendered.indexOf("1/3") / (width + 1);
-            int secondRow = rendered.indexOf("> 2/3") / (width + 1);
-            int thirdRow = rendered.indexOf("3/3") / (width + 1);
+            int firstRow = rendered.indexOf("1/4") / (width + 1);
+            int secondRow = rendered.indexOf("> 2/4") / (width + 1);
+            int thirdRow = rendered.indexOf("3/4") / (width + 1);
             if (width == 160) {
                 assertEquals(firstRow, secondRow);
                 assertEquals(secondRow, thirdRow);
@@ -105,7 +106,7 @@ class WorkspaceViewTest {
                 assertTrue(firstRow < secondRow);
                 assertTrue(secondRow < thirdRow);
             }
-            assertTrue(rendered.contains("Note names: C, E, G"));
+            assertTrue(rendered.contains("Notes: C, E, G"));
             assertTrue(rendered.contains("Messages: 0"));
             assertEquals(4, rendered.chars()
                 .filter(symbol -> symbol == '╭')
@@ -125,40 +126,77 @@ class WorkspaceViewTest {
         var buffer = Buffer.empty(area);
         view(instances, 1, true).render(area, buffer);
         String rendered = text(buffer);
-        int monitorRow = rendered.indexOf("> 2/4") / (area.width() + 1);
+        int monitorRow = rendered.indexOf("> 2/5") / (area.width() + 1);
         assertEquals("╭", buffer.get(0, monitorRow)
             .symbol());
         assertEquals("╮", buffer.get(area.width() - 1, monitorRow)
             .symbol());
-        assertTrue(rendered.indexOf("1/4") < rendered.indexOf("> 2/4"));
-        assertTrue(rendered.indexOf("> 2/4") < rendered.indexOf("3/4"));
-        assertEquals(rendered.indexOf("3/4") / (area.width() + 1),
-            rendered.indexOf("4/4") / (area.width() + 1));
+        assertTrue(rendered.indexOf("1/5") < rendered.indexOf("> 2/5"));
+        assertTrue(rendered.indexOf("> 2/5") < rendered.indexOf("3/5"));
+        assertEquals(rendered.indexOf("3/5") / (area.width() + 1),
+            rendered.indexOf("4/5") / (area.width() + 1));
         assertTrue(monitor.budget > 1);
     }
 
     @Test
-    void hostStatusAndLatestActivityShareOneCompactPanel() {
+    void hostSummaryIsFocusableAndShowsOnlyTheThreeSummaryCategories() {
         for (int width : List.of(80, 160)) {
             var area = Rect.of(width, 20);
             var buffer = Buffer.empty(area);
-            new WorkspaceView(List.of("winmm | inputs=8", "postSSB [open]"), List.of(), 0,
-                List.of("earlier event", "latest event"), 2,
+            new WorkspaceView(hostStatus(), List.of(), 0,
                 new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
             String rendered = text(buffer);
             assertTrue(rendered.contains("CONNECTIONS / ACTIVITY"));
-            assertTrue(rendered.contains("log drops: 2"));
-            assertTrue(rendered.contains("winmm | inputs=8"));
-            assertTrue(rendered.contains("postSSB [open]"));
-            assertTrue(rendered.contains("latest event"));
-            assertFalse(rendered.contains("earlier event"));
+            assertFalse(rendered.contains("d details"));
+            assertTrue(rendered.contains("> 1/1"));
+            assertTrue(rendered.contains("Backend: winmm | inputs=8 outputs=1"));
+            assertTrue(rendered.contains("Output: postSSB -> postSSB | open | queue=0 lost=0"));
+            assertTrue(rendered.contains("Modules:"));
+            assertFalse(rendered.contains("Timing:"));
+            assertFalse(rendered.contains("Activity:"));
             assertEquals(1, rendered.chars()
                 .filter(symbol -> symbol == '╭')
                 .count());
-            int connectionRow = rendered.indexOf("winmm") / (width + 1);
-            int activityRow = rendered.indexOf("latest event") / (width + 1);
-            assertEquals(width >= 100 ? connectionRow : connectionRow + 2, activityRow);
+            assertTrue(area.positions()
+                .anyMatch(position -> buffer.get(position)
+                    .symbol()
+                    .equals("╭")
+                    && buffer.get(position)
+                        .style()
+                        .fg()
+                        .orElseThrow()
+                        .equals(Color.LIGHT_CYAN)));
         }
+    }
+
+    @Test
+    void wrappedConnectionTailsRemainVisibleInTheCompactHostWidget() {
+        var status = new HostStatus(new HostStatus.Devices("windows-midi-services", 8, 1,
+            "submission n=128 median=2200 p95=4100 p99=6500 max=8100 jitter=4300 ns",
+            List.of(new HostStatus.Connection("postSSB",
+                "A long physical hardware device name with several endpoint groups END-OF-PORT",
+                true, 0, 0))),
+            List.of(), List.of());
+        var area = Rect.of(80, 24);
+        var buffer = Buffer.empty(area);
+        new WorkspaceView(status, List.of(), 0,
+            new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
+        String rendered = text(buffer);
+        assertTrue(rendered.contains("END-OF-PORT"));
+        assertFalse(rendered.contains("jitter=4300"));
+    }
+
+    @Test
+    void compactTerminalCanFocusTheHostWhileStillDrainingHiddenMonitors() {
+        var hidden = new ElasticRows();
+        var instances = List.of(instance("hidden-monitor", hidden));
+        var area = Rect.of(80, 12);
+        var buffer = Buffer.empty(area);
+        view(instances, 1, true).render(area, buffer);
+        assertEquals(1, hidden.budget);
+        assertTrue(text(buffer).contains("> 2/2"));
+        assertTrue(text(buffer).contains("Backend:"));
+        assertFalse(text(buffer).contains("hidden-monitor"));
     }
 
     @Test
@@ -201,22 +239,21 @@ class WorkspaceViewTest {
     }
 
     private static WorkspaceView view(List<Instance> instances, int focused, boolean colors) {
-        return new WorkspaceView(List.of("winmm | inputs=8 outputs=1", "postSSB [open] queue=0"),
-            instances, focused, List.of("Connected 8 inputs"), 0,
+        return new WorkspaceView(hostStatus(),
+            instances, focused,
             new WorkspaceView.Editor(false, "hex", ""), "", colors);
     }
 
     @Test
-    void compactEditorKeepsItsInputAndTheLatestDiagnosticVisible() {
+    void compactEditorKeepsItsInputOutsideTheHostSummary() {
         var instances = List.of(instance("hidden-monitor", new ElasticRows()),
             instance("visible-monitor", new ElasticRows()));
         var area = Rect.of(100, 20);
         var buffer = Buffer.empty(area);
-        new WorkspaceView(List.of("winmm | inputs=8 outputs=1"), instances, 1,
-            List.of("earlier event", "last route failed"), 0,
+        new WorkspaceView(hostStatus(), instances, 1,
             new WorkspaceView.Editor(true, "hex", "90 3C 64"), "FA", true).render(area, buffer);
         assertTrue(text(buffer).contains("90 3C 64"));
-        assertTrue(text(buffer).contains("last route failed"));
+        assertTrue(text(buffer).contains("Copy: FA"));
         assertTrue(text(buffer).contains("visible-monitor"));
     }
 
@@ -233,6 +270,13 @@ class WorkspaceViewTest {
             }
         };
         return new Instance(name, "midi-monitor", List.of(), List.of(), module);
+    }
+
+    private static HostStatus hostStatus() {
+        return new HostStatus(new HostStatus.Devices("winmm", 8, 1,
+            "No output latency samples",
+            List.of(new HostStatus.Connection("postSSB", "postSSB", true, 0, 0))),
+            List.of(), List.of());
     }
 
     private static String text(Buffer buffer) {

@@ -113,14 +113,16 @@ public final class DeviceManager implements AutoCloseable {
             });
     }
 
-    public synchronized List<String> status() {
-        List<String> lines = new ArrayList<>();
-        lines.add("%s | inputs=%d outputs=%d | %s".formatted(app.backend(), inputs.size(),
-            handles.size(), latency.summary()));
-        outputs.forEach((endpoint, route) -> lines.add("%s -> %s [%s] queue=%d lost=%d".formatted(
-            endpoint.name(), route.port.name(), route.available ? "open" : "unavailable",
-            route.queue.size(), route.lost.sum())));
-        return List.copyOf(lines);
+    public synchronized HostStatus.Devices status() {
+        List<HostStatus.Connection> connections = outputs.entrySet()
+            .stream()
+            .map(entry -> new HostStatus.Connection(entry.getKey()
+                .name(),
+                entry.getValue().port.name(), entry.getValue().available,
+                entry.getValue().queue.size(), entry.getValue().lost.sum()))
+            .toList();
+        return new HostStatus.Devices(app.backend(), inputs.size(), handles.size(),
+            latency.summary(), connections);
     }
 
     public synchronized void reconnect() {

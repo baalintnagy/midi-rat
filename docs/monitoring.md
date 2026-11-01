@@ -33,7 +33,7 @@ From the repository directory, run the already-built JAR with the installed JDK 
 
 ```powershell
 Set-Location C:\develop\gitrepos\midi-rat
-& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\wmm-application-monitor.yaml
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.2.0.jar --config .\config\wmm-application-monitor.yaml
 ```
 
 Alternatively, use the packaged launcher and its bundled Java runtime:
@@ -43,7 +43,9 @@ Alternatively, use the packaged launcher and its bundled Java runtime:
 ```
 
 Run these in an interactive terminal. Monitor controls: `p` pause/resume, `c` clear,
-`d` raw/decoded details, `y` copy the latest displayed message, `q` exit.
+`d` opens full-screen details, `y` copies the latest displayed message, `q` exits.
+In details, `x` toggles raw/decoded payloads; Esc or `d` returns to the workspace.
+Use `<` / `>` to pan wide message rows without changing their fixed-column format.
 
 The monitor fills the available terminal height with the newest messages, instead
 of stopping at twelve rows. A taller terminal shows more rows; expanded details
@@ -64,19 +66,47 @@ the terminal's plain-color fallback disable it.
 The workspace uses rounded borders with spaced titles showing each module's name,
 type, and position. The focused widget has a cyan border and `>` marker. Module
 labels, numeric values, states, and separators receive lightweight syntax accents;
-MIDI row colors and fixed column widths remain unchanged. Connection status and
-the latest activity share one compact bordered panel below the modules, using adjacent
-columns in wide terminals and stacked rows in narrow terminals. Multiple monitors divide the remaining
+MIDI row colors and fixed column widths remain unchanged. Connections / Activity
+is a focusable host widget after the modules in the Tab/j/k order, with the same cyan
+focus border and `>` marker. Its compact content contains only Backend, Output, and
+Modules summary rows. Long values wrap by terminal display cells. Individual module
+states, timing, endpoint aliases, and activity appear only in its details.
+
+Focus the host widget and press `d` (or use the `h` shortcut) for full-screen details.
+`m` or Tab cycles Status → Configuration → Activity; `[` / `]` scrolls the active page.
+Esc, `d`, or `h` returns to the workspace with host focus retained. Configuration shows
+resolved paths, loaded application YAML, active network YAML, exact port bindings,
+module settings and wiring, provider/API versions, queue sizes, and runtime controls.
+These are loaded snapshots, so external edits are not presented as active configuration
+until successfully applied. The UI does not read files on each render.
+
+Active emitter editing and copy feedback appear above the widgets. Multiple monitors divide the remaining
 content rows equally, accounting for border height and spacing. Adjacent fixed-height
 module widgets share columns when their titles and content fit. Columns adapt to the
 terminal width and current content; module order and focus navigation stay unchanged.
 Monitors always occupy a full-width row. Small terminals show
 the focused widget, while hidden monitor histories continue updating.
 
+Filters show `● 6w | 0b | Passed: 123 | Blocked: 45` in their compact widget.
+`w` and `b` count whitelist and blacklist rules. The green activity LED remains lit
+for 10 ms after a blocked message, then becomes a gray hollow circle. Passed
+messages do not light or prolong it; the shapes also work
+without colors. Passed/blocked counters count decisions for the instance's lifetime.
+
+Focus a filter and press `d` for one full-screen panel, initially showing Rules.
+`m` or Tab cycles Rules → Passed → Blocked → Rules in that same panel. Validated
+YAML rules retain all configured selections, with `[` / `]` scrolling the rules page.
+Passed and blocked histories each retain up to 2000 messages
+through nonblocking queues, with capture losses shown as UI drops. Logs use the monitor's
+fields, colors, provenance, and note names. `p`, `c`, and `y` act on the selected log;
+clearing or pausing a log does not reset decision counts or affect filtering. Captures
+continue draining while other detail screens are open. Nothing is written as a MIDI
+payload log to disk.
+
 To validate the files without opening devices or starting the UI:
 
 ```powershell
-& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.1.0-SNAPSHOT.jar --config .\config\wmm-application-monitor.yaml --validate
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.2.0.jar --config .\config\wmm-application-monitor.yaml --validate
 ```
 
 To rebuild the JAR without invoking native/app-image packaging:

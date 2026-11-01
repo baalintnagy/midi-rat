@@ -688,11 +688,10 @@ held-key lifetime. Explicit received CC120/CC123 clears that channel's input sta
 Other non-note messages do not affect recognition. No MIDI is emitted.
 
 Display all library candidates in library order, `--` when no notes remain, and
-`unrecognized` when the held set has no match. Also display held MIDI pitches and,
-on a separate `Note names` line, the monitor's musical pitch-class labels in the same
-order. Use both common enharmonic spellings for accidentals, e.g. `(C#,Db)`, with no
-octave suffix, matching the monitor. Show `--` on both held-note lines when empty.
-Display `Note names` above `Held MIDI notes`.
+`unrecognized` when the held set has no match. Display a single `Notes` line using
+the monitor's musical pitch-class labels in ascending MIDI pitch order. Use both
+common enharmonic spellings for accidentals, e.g. `(C#,Db)`, with no octave suffix,
+matching the monitor. Show `--` when empty. Do not display numeric held MIDI notes.
 Each module instance owns independent state; reload/removal discards it silently.
 Publish immutable display snapshots to the UI. The bundled library must work offline
 with no Node/npm installation; preserve its license and reproducible build provenance.
@@ -1073,6 +1072,14 @@ while processing incoming MIDI.
 
 ### 10.10 Sostenuto processor
 
+**[User packaging decision, 30 October 2026]** Sostenuto is an external module JAR,
+registered through the standard `ModuleProvider` service descriptor and loaded from
+`moduleDirectory`. Keep its implementation out of the host JAR. Build it as a
+separate Maven project against the provided host API; the root reactor builds the
+host, module, then distribution. Install the development JAR at `modules/sostenuto.jar`
+and bundle it in the Windows image's `modules` directory. Preserve the existing
+type ID, settings, example wiring, lifecycle, and processing behavior.
+
 **[User addition, 30 October 2026]** Register `sostenuto` as a processor with sources,
 destinations, and YAML settings. Maintain independent state per MIDI channel and
 pitch, combining origins and subscribed sources after control-input selection.
@@ -1091,7 +1098,7 @@ channel/pitch, matching piano-key behavior; overlapping presses are not paired F
 **[Design completion D16]** The MIDI Rat settings are:
 
 ```yaml
-- name: piano-pedals
+- name: SOS
   type: sostenuto
   sources: [keys, pedals, performance]
   destinations: [processed]
@@ -1155,10 +1162,14 @@ Bind this output by exact name for WinMM and discovered stable endpoint/group ID
 for Windows MIDI Services.
 
 **[User example addition, 30 October 2026]** Both sostenuto example networks also
-include a `midi-emitter` named `manual-postSSB`, with `destinations: [postSSB]`,
+include a `midi-emitter` named `EMT`, with `destinations: [postSSB]`,
 `format: hex`, and an initially empty `messages` list. It sends only when invoked
 by the user and connects directly to the physical output. The same shared networks
 serve all four WinMM/Windows MIDI Services application examples.
+
+**[User instance naming revision, 1 November 2026]** Name these example instances
+`M-IN` (musical filter), `MON` (input monitor), `SOS` (sostenuto), `CHRD` (chord
+observer), and `EMT` (manual emitter). Keep bus and physical port aliases unchanged.
 
 **[Design completion D17]** To retain dedicated controller identity through a shared
 filtered bus, support `controlOrigins: [launchpad-main]` (or `[hammer-midi-3]` in
@@ -1258,9 +1269,8 @@ Widgets use host-owned UI scheduling and release resources when their instance s
 
 **[User presentation addition, 30 October 2026; design completion D18]** Group the
 application title and keyboard hints with clear spacing. Present module widgets inside
-rounded borders. Combine connection status and the latest activity in one compact
-bordered host panel below the modules, with adjacent columns in wide terminals and
-stacked rows in narrow terminals. Keep active editor input visible. Highlight the focused module
+rounded borders. Present connection status in a focusable bordered host widget below
+the modules. Keep active editor input visible above the widgets. Highlight the focused widget
 with a cyan border and a textual focus marker; show its position, name, and type
 in the title. Apply presentation-only token colors to module data (labels, numeric
 values, on/off states, and separators), retaining the monitor's existing event palette
@@ -1276,6 +1286,44 @@ elastic monitors on full-width rows, and return to stacked rows as the terminal
 narrows. Measure terminal display cells, including borders and spacing; use the
 tallest widget to determine each shared row's height. Module data and behavior stay
 unchanged.
+
+**[User presentation revision, 1 November 2026; design completion D20]** Structure
+the compact host widget as full-width Backend, Output, and Modules summary rows only.
+Wrap long values using terminal display cells and allocate their wrapped height.
+Show individual modules, timing, endpoint aliases, and activity in full-screen details.
+Do not change module processing or other widget content.
+
+**[User presentation revision, 1 November 2026; design completion D21]** Widget details
+open a separate full-screen view, including host details; they do not expand inline.
+Use `d` for the focused widget, `h` as a host shortcut, and Esc or the same key to return.
+Keep hidden captures draining. Add a default module-details API adapter so existing
+external providers remain compatible; rich details expose information and content
+through capability interfaces, without concrete module checks in the UI.
+
+The filter widget displays `6w | 0b`, an activity LED, and `Passed:` / `Blocked:`
+lifetime decision counters. Its details use one panel with Rules, Passed, and Blocked
+pages, initially Rules, cycling in that order with `m`/Tab. Show validated YAML on
+the Rules page. The activity LED lights only on blocked messages; passed messages
+do not light or extend it. **[User timing revision]** Use a 10 ms blocked-message
+pulse, separate 2000-message bounded histories with nonblocking capture and visible
+UI-drop counts, `[`/`]` to scroll rules, and `<`/`>` to pan
+fixed-column message rows. Reuse the monitor's format, colors, pause/clear/copy,
+and raw/decoded payload display (`x`). Pausing, clearing, or overflowing a log must
+not change filtering or decision counters. Capture is in memory, not disk logging.
+
+**[User presentation revision, 1 November 2026; design completion D22]** Include the
+Connections / Activity host widget after the modules in the focus order and widget
+position count. Apply the same focus border/marker and `d` detail action. Preserve
+safe host selection when there are no modules; module-specific controls must not
+act on a different module while the host is selected.
+
+Host details cycle Status, Configuration, and Activity with `m`/Tab, using `[`/`]`
+to scroll. Configuration describes resolved paths, exact bindings, loaded application
+and active network YAML, instance settings/wiring, provider versions/API roles, queue
+capacities, timing semantics, and explicit runtime controls. Use in-memory loaded
+snapshots so unapplied file edits do not masquerade as active configuration. Do not
+perform filesystem reads on the UI render path. Keep emitter editing/copy feedback
+outside the compact host panel.
 
 Recoverable instance errors stop or disable that instance and report an actionable
 diagnostic; unrelated instances continue where possible. Report unrecoverable host

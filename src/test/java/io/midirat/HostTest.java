@@ -125,6 +125,29 @@ class HostTest {
     }
 
     @Test
+    void configurationDetailsDescribeLoadedFilesAndRetainTheActiveNetworkSnapshot()
+        throws Exception {
+        var app = config("{synth: {id: out-id}}");
+        try (var diagnostics = new Diagnostics(directory.resolve("logs"));
+            var host = new Host(app, new Backend(), diagnostics, System.nanoTime())) {
+            var details = host.configuration();
+            assertEquals(app, details.application());
+            String text = String.join("\n", details.applicationYaml());
+            assertTrue(text.contains("id: out-id"));
+            text = String.join("\n", details.networkYaml());
+            assertTrue(text.contains("name: emitter"));
+            assertTrue(text.contains("destinations: [bus]"));
+            assertTrue(details.providers()
+                .stream()
+                .anyMatch(provider -> provider.type()
+                    .equals("midi-message-filter")
+                    && provider.apiVersion() == 1));
+            Files.writeString(app.network(), "external edit not yet loaded");
+            assertEquals(details, host.configuration());
+        }
+    }
+
+    @Test
     void invalidReloadKeepsActiveInstancesAndSaveDetectsConflict() throws Exception {
         var app = config("{}");
         try (var diagnostics = new Diagnostics(directory.resolve("logs"));

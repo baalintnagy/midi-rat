@@ -13,7 +13,7 @@
         "-Djna.library.path=${workspaceFolder}/target/native",
         "-Djava.library.path=${workspaceFolder}/target/native"
       ],
-      "preLaunchTask": "MIDI Rat: build native bridge",
+      "preLaunchTask": "MIDI Rat: prepare sostenuto and native bridge",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
@@ -25,6 +25,7 @@
       "projectName": "midi-rat",
       "args": ["--config", "${workspaceFolder}/config/wmm-application-sostenuto-launchpad.yaml"],
       "vmArgs": ["--enable-native-access=ALL-UNNAMED"],
+      "preLaunchTask": "MIDI Rat: build JAR",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
@@ -40,7 +41,7 @@
         "-Djna.library.path=${workspaceFolder}/target/native",
         "-Djava.library.path=${workspaceFolder}/target/native"
       ],
-      "preLaunchTask": "MIDI Rat: build native bridge",
+      "preLaunchTask": "MIDI Rat: prepare sostenuto and native bridge",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
@@ -52,6 +53,7 @@
       "projectName": "midi-rat",
       "args": ["--config", "${workspaceFolder}/config/wmm-application-sostenuto.yaml"],
       "vmArgs": ["--enable-native-access=ALL-UNNAMED"],
+      "preLaunchTask": "MIDI Rat: build JAR",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },

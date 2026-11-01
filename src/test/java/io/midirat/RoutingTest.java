@@ -198,9 +198,9 @@ class RoutingTest {
             for (int i = 0; i < RoutingEngine.PROCESSING_CAPACITY + 1; i++) {
                 engine.receive(message);
             }
-            assertTrue(engine.status()
+            assertEquals(1, engine.status()
                 .getFirst()
-                .contains("lost=1"));
+                .lost());
             release.countDown();
         }
     }

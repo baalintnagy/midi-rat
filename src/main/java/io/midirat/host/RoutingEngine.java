@@ -153,11 +153,11 @@ public final class RoutingEngine implements AutoCloseable {
         errors.accept("Panic published to all internal buses (best effort; inspect queue losses)");
     }
 
-    public List<String> status() {
+    public List<HostStatus.Route> status() {
         return routes.values()
             .stream()
-            .map(r -> "%s [%s] queue=%d lost=%d".formatted(
-                r.instance.name(), r.running ? "active" : "disabled", r.queue.size(), r.lost.sum()))
+            .map(r -> new HostStatus.Route(r.instance.name(), r.running,
+                r.queue.size(), r.lost.sum()))
             .toList();
     }
 

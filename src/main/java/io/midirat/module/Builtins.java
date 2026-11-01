@@ -10,9 +10,9 @@ import io.midirat.api.ModuleProvider.Role;
 import io.midirat.chord.TonalChordRecognizer;
 import io.midirat.config.Value;
 import io.midirat.midi.Endpoint;
+import io.midirat.presentation.YamlFormat;
 import io.midirat.rule.MessageRule;
 import io.midirat.rule.RuleDecoder;
-import io.midirat.sostenuto.SostenutoDecoder;
 
 public final class Builtins {
     private Builtins() {
@@ -23,7 +23,6 @@ public final class Builtins {
             new Provider("midi-message-filter", Role.PROCESSOR, Builtins::filter),
             new Provider("midi-monitor", Role.MONITOR, Builtins::monitor),
             new Provider("midi-chord", Role.MONITOR, Builtins::chord),
-            new Provider("sostenuto", Role.PROCESSOR, Builtins::sostenuto),
             new Provider("midi-emitter", Role.EMITTER, Builtins::emitter),
             new Provider("midi-remap", Role.PROCESSOR, Builtins::remap));
     }
@@ -31,7 +30,7 @@ public final class Builtins {
     private static ModuleInstance filter(Value settings, List<Endpoint> sources) {
         Map<String, Value> fields = settings.mapping("whitelist", "blacklist");
         return new FilterModule(rules(fields.get("whitelist"), sources),
-            rules(fields.get("blacklist"), sources));
+            rules(fields.get("blacklist"), sources), YamlFormat.lines(settings));
     }
 
     private static ModuleInstance monitor(Value settings, List<Endpoint> sources) {
@@ -51,10 +50,6 @@ public final class Builtins {
             throw settings.error("Chord observer has no settings");
         }
         return new ChordModule(new TonalChordRecognizer());
-    }
-
-    private static ModuleInstance sostenuto(Value settings, List<Endpoint> sources) {
-        return new SostenutoModule(SostenutoDecoder.decode(settings, sources));
     }
 
     private static ModuleInstance emitter(Value settings, List<Endpoint> sources) {

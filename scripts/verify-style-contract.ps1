@@ -24,15 +24,15 @@ public final class StyleProbe {
 $content = $content.Replace('    @Deprecated', "`t@Deprecated")
 [IO.File]::WriteAllText($source, $content, [Text.UTF8Encoding]::new($false))
 $pom = Join-Path $fixture 'pom.xml'
-mvn --batch-mode --no-transfer-progress -f $pom checkstyle:check *> (Join-Path $fixture 'rejected.log')
+mvn -N --batch-mode --no-transfer-progress -f $pom checkstyle:check *> (Join-Path $fixture 'rejected.log')
 if ($LASTEXITCODE -eq 0) { throw 'Expected representative style violations to be rejected' }
 & "$env:JAVA_HOME/bin/javac.exe" -d $fixture $source
 if ($LASTEXITCODE -ne 0) { throw 'Original fixture did not compile' }
 $before = & "$env:JAVA_HOME/bin/java.exe" -cp $fixture fixture.StyleProbe
-mvn --batch-mode --no-transfer-progress -f $pom spotless:apply checkstyle:check
+mvn -N --batch-mode --no-transfer-progress -f $pom spotless:apply checkstyle:check
 if ($LASTEXITCODE -ne 0) { throw 'Automatic formatting did not produce accepted output' }
 $first = [IO.File]::ReadAllBytes($source)
-mvn --batch-mode --no-transfer-progress -f $pom spotless:apply spotless:check
+mvn -N --batch-mode --no-transfer-progress -f $pom spotless:apply spotless:check
 if ($LASTEXITCODE -ne 0) { throw 'Second formatting pass failed' }
 $second = [IO.File]::ReadAllBytes($source)
 if ([Convert]::ToBase64String($first) -ne [Convert]::ToBase64String($second)) {

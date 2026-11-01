@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.midirat.api.ModuleInstance;
 import io.midirat.config.ApplicationConfig;
@@ -18,6 +19,7 @@ import io.midirat.host.RoutingEngine;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MessageCodec;
 import io.midirat.module.Builtins;
+import io.midirat.sostenuto.SostenutoProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -25,8 +27,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 class SostenutoNetworkTest {
     private NetworkConfig network(String application) throws Exception {
         return NetworkConfig.read(ApplicationConfig.read(Path.of("config", application)),
-            Builtins.providers()
-                .stream()
+            Stream.concat(Builtins.providers()
+                .stream(), Stream.of(new SostenutoProvider()))
                 .collect(Collectors.toMap(p -> p.type(), p -> p)));
     }
 

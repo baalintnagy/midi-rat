@@ -28,6 +28,12 @@ Use maintained production and test source roots, including future module roots;
 exclude generated sources, vendored sources, temporary utilities, and build output.
 Do not copy unrelated module paths or application dependencies into the build.
 
+The root reactor runs Spotless and Checkstyle over both `src` and
+`extensions/sostenuto/src`, including their maintained tests. Child projects skip
+duplicate style executions; run the documented style commands from the repository
+root. The separate application/module/distribution builds retain JDK 25 compiler
+checks. Generated and build output remain excluded.
+
 ## Pinned tooling
 
 The Maven descriptor pins the following tools:

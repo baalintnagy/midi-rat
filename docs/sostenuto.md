@@ -1,5 +1,17 @@
 # Sostenuto
 
+Sostenuto is an external module, discovered through the standard module service API.
+The root Maven build produces `extensions/sostenuto/target/sostenuto.jar` and installs
+a development copy at `modules/sostenuto.jar`. The Windows distribution includes it
+in `MidiRat/modules/sostenuto.jar`. Keep this JAR in the configured `moduleDirectory`;
+the host JAR does not contain the sostenuto implementation. Existing YAML settings
+and network wiring are unchanged. Replacing or removing this JAR uses the normal
+module watcher and does not send automatic cleanup MIDI.
+
+Run `mvn package` from the repository root to rebuild the host and module without
+Windows packaging; `mvn verify` also runs integration checks and Windows packaging.
+VS Code's sostenuto launch configurations build the module before starting the host.
+
 The `sostenuto` processor emulates piano sustain/sostenuto ownership before an
 instrument receives MIDI. Sustain holds released notes; sostenuto captures notes
 pressed or already sustained when it engages. Held notes can pass between pedals
@@ -7,7 +19,7 @@ without an intermediate release. CC64 and CC66 are consumed by the emulation.
 Other MIDI passes unchanged, except messages from explicitly dedicated control inputs.
 
 ```yaml
-- name: piano-pedals
+- name: SOS
   type: sostenuto
   sources: [keys, pedals, performance]
   destinations: [processed]
@@ -83,38 +95,41 @@ The processor also sends its output to physical `postSSB`. Umbrella remains enab
 with a 1 ms delay and 1 ms tail. Both backend application variants bind `postSSB`;
 Windows MIDI Services uses its discovered stable endpoint/group ID.
 
-Both networks also include `manual-postSSB`, an initially empty hex emitter connected
+The instance names are `M-IN` (musical-message filter), `MON` (input monitor),
+`SOS` (sostenuto), `CHRD` (chord observer), and `EMT` (manual emitter).
+
+Both networks also include `EMT`, an initially empty hex emitter connected
 directly to `postSSB`. Focus it with Tab, use `e` to edit or `v` to paste a copied
 message, and press Enter to send the sequence. Its direct output is separate from
-the input-monitor and chord-observer subscriptions. These networks are shared by
+the MON and chord-observer subscriptions. These networks are shared by
 their WinMM and Windows MIDI Services application variants.
 
 ### CC22 momentary-control network
 
 ```mermaid
 flowchart LR
-    I[All eight inputs] --> F[Musical-message filter]
+    I[All eight inputs] --> F[M-IN: Musical-message filter]
     F --> B([musical-input])
-    B --> M[Input monitor]
-    B --> S["Sostenuto<br/>hammer-midi-3 · CC22 hold"]
+    B --> M[MON: Input monitor]
+    B --> S["SOS: Sostenuto<br/>hammer-midi-3 · CC22 hold"]
     S --> O([sostenuto-output])
-    O --> C[Chord observer]
+    O --> C[CHRD: Chord observer]
     S --> P[postSSB MIDI output]
-    E[manual-postSSB emitter] --> P
+    E[EMT emitter] --> P
 ```
 
 ### Launchpad note-78 toggle network
 
 ```mermaid
 flowchart LR
-    I[All eight inputs] --> F[Musical-message filter]
+    I[All eight inputs] --> F[M-IN: Musical-message filter]
     F --> B([musical-input])
-    B --> M[Input monitor]
-    B --> S["Sostenuto<br/>launchpad-main · note 78 toggle"]
+    B --> M[MON: Input monitor]
+    B --> S["SOS: Sostenuto<br/>launchpad-main · note 78 toggle"]
     S --> O([sostenuto-output])
-    O --> C[Chord observer]
+    O --> C[CHRD: Chord observer]
     S --> P[postSSB MIDI output]
-    E[manual-postSSB emitter] --> P
+    E[EMT emitter] --> P
 ```
 
 ### Terminal commands

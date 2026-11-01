@@ -110,6 +110,8 @@
   tools into verification, pin their versions, include maintained production and
   test sources, and exclude generated/build output. Use Spotless for formatting
   and import cleanup and Checkstyle for validation; bind both checks to `verify`.
+  The root reactor checks maintained host and external module production/test roots;
+  child builds skip duplicate style checks. Run style commands from the repository root.
 - Once Maven integration exists, use `mvn spotless:apply` for routine Java formatting,
   `mvn spotless:check checkstyle:check` for style-only validation, and `mvn verify`
   for build verification. These commands are wired into the root Maven build.

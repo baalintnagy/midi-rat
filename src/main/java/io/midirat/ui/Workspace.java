@@ -14,6 +14,7 @@ import dev.tamboui.terminal.Backend;
 import dev.tamboui.terminal.BackendFactory;
 import dev.tamboui.terminal.Frame;
 import dev.tamboui.terminal.Terminal;
+import io.midirat.api.ModuleDetails;
 import io.midirat.api.MonitorControls;
 import io.midirat.config.NetworkConfig.Instance;
 import io.midirat.host.Diagnostics;
@@ -30,6 +31,10 @@ public final class Workspace {
             .name("host-controls")
             .factory());
     private int focused;
+    private boolean hostDetails;
+    private String detailsName;
+    private final DetailsView.State detailState = new DetailsView.State();
+    private final HostDetailsView.State hostState = new HostDetailsView.State();
     private String copied = "";
     private final SequenceEditor editor = new SequenceEditor();
     private final boolean colorTerminal = !"dumb".equals(System.getenv("TERM"))
@@ -81,12 +86,21 @@ public final class Workspace {
                     continue;
                 }
                 List<Instance> instances = host.instances();
-                Instance selected = instances.isEmpty() ? null
-                    : instances.get(Math.floorMod(focused, instances.size()));
+                int selectedIndex = Math.floorMod(focused, instances.size() + 1);
+                Instance selected = selectedIndex == instances.size() ? null
+                    : instances.get(selectedIndex);
+                if (detailKey(key, instances)) {
+                    continue;
+                }
                 switch (key) {
                 case 'q', 3 -> running = false;
                 case 9, 'j' -> focused++;
                 case 'k' -> focused = Math.max(0, focused - 1);
+                case 'h' -> {
+                    hostDetails = true;
+                    focused = instances.size();
+                    hostState.reset();
+                }
                 case 'P' -> command(host::panic);
                 case 'r' -> command(host::reload);
                 case 'R' -> command(host::reconnect);
@@ -114,7 +128,13 @@ public final class Workspace {
                     monitorAction(selected, MonitorControls::clear);
                 }
                 case 'd' -> {
-                    monitorAction(selected, MonitorControls::toggleDetails);
+                    if (selected != null) {
+                        detailsName = selected.name();
+                        detailState.reset();
+                    } else {
+                        hostDetails = true;
+                        hostState.reset();
+                    }
                 }
                 case 'y' -> {
                     monitorAction(selected, monitor -> {
@@ -154,6 +174,64 @@ public final class Workspace {
         void run() throws Exception;
     }
 
+    private boolean detailKey(int key, List<Instance> instances) {
+        if (hostDetails) {
+            switch (key) {
+            case 27, 'h', 'd' -> hostDetails = false;
+            case 'm', 9 -> hostState.nextPage();
+            case '[' -> hostState.move(-3);
+            case ']' -> hostState.move(3);
+            default -> {
+                return key != 'q'
+                    && key != 'P'
+                    && key != 'r'
+                    && key != 'R';
+            }
+            }
+            return true;
+        }
+        if (detailsName == null) {
+            return false;
+        }
+        Optional<Instance> selected = instances.stream()
+            .filter(instance -> instance.name()
+                .equals(detailsName))
+            .findFirst();
+        if (selected.isEmpty()) {
+            detailsName = null;
+            return false;
+        }
+        ModuleDetails details = selected.get()
+            .module()
+            .details();
+        switch (key) {
+        case 27, 'd' -> detailsName = null;
+        case 'm', 9 -> {
+            details.nextMode();
+            detailState.reset();
+        }
+        case '[' -> detailState.information.move(-3);
+        case ']' -> detailState.information.move(3);
+        case '<' -> detailState.horizontal.move(-8);
+        case '>' -> detailState.horizontal.move(8);
+        case 'p' -> details.controls()
+            .ifPresent(MonitorControls::togglePause);
+        case 'c' -> details.controls()
+            .ifPresent(MonitorControls::clear);
+        case 'x' -> details.controls()
+            .ifPresent(MonitorControls::toggleDetails);
+        case 'y' -> details.controls()
+            .ifPresent(control -> copied = control.copy());
+        default -> {
+            return key != 'q'
+                && key != 'P'
+                && key != 'r'
+                && key != 'R';
+        }
+        }
+        return true;
+    }
+
     private static void monitorAction(Instance instance,
         Consumer<MonitorControls> action) {
         if (instance != null) {
@@ -185,8 +263,9 @@ public final class Workspace {
         }
         try {
             List<Instance> instances = host.instances();
-            editor.accept(key, instances.isEmpty() ? Optional.empty()
-                : instances.get(Math.floorMod(focused, instances.size()))
+            int index = Math.floorMod(focused, instances.size() + 1);
+            editor.accept(key, index == instances.size() ? Optional.empty()
+                : instances.get(index)
                     .module()
                     .emitterControls());
         } catch (IllegalArgumentException exception) {
@@ -196,11 +275,36 @@ public final class Workspace {
 
     private void render(Frame frame) {
         List<Instance> instances = host.instances();
-        if (!instances.isEmpty()) {
-            focused = Math.floorMod(focused, instances.size());
+        focused = Math.floorMod(focused, instances.size() + 1);
+        if (hostDetails
+            || detailsName != null) {
+            // Keep every hidden monitor/filter capture drained while viewing details.
+            instances.forEach(instance -> instance.module()
+                .widget()
+                .lines(1));
+            if (hostDetails) {
+                frame.renderWidget(
+                    new HostDetailsView(host.status(),
+                        HostConfigurationFormat.lines(host.configuration()),
+                        diagnostics.recent(), diagnostics.lost(), hostState, colorTerminal),
+                    frame.area());
+                return;
+            }
+            Optional<Instance> selected = instances.stream()
+                .filter(instance -> instance.name()
+                    .equals(detailsName))
+                .findFirst();
+            if (selected.isPresent()) {
+                Instance instance = selected.get();
+                frame.renderWidget(new DetailsView(instance.name(), instance.type(),
+                    instance.module()
+                        .details(),
+                    detailState, colorTerminal), frame.area());
+                return;
+            }
+            detailsName = null;
         }
         WorkspaceView view = new WorkspaceView(host.status(), instances, focused,
-            diagnostics.recent(), diagnostics.lost(),
             new WorkspaceView.Editor(editor.active(), editor.format(), editor.text()),
             copied, colorTerminal);
         frame.renderWidget(view, frame.area());

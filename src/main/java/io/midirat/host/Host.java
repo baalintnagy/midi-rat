@@ -1,6 +1,7 @@
 package io.midirat.host;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Files;
 import java.nio.file.StandardWatchEventKinds;
@@ -8,6 +9,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import io.midirat.midi.MidiMessage;
 
 public final class Host implements AutoCloseable {
     private final ApplicationConfig app;
+    private final List<String> applicationYaml;
     private final Diagnostics diagnostics;
     private final DeviceManager devices;
     private final long origin;
@@ -40,6 +43,7 @@ public final class Host implements AutoCloseable {
     public Host(ApplicationConfig app, MidiBackend backend, Diagnostics diagnostics,
         long origin) throws IOException {
         this.app = app;
+        applicationYaml = Files.readAllLines(app.file());
         this.diagnostics = diagnostics;
         this.origin = origin;
         devices = new DeviceManager(backend, app, diagnostics, origin);
@@ -137,13 +141,26 @@ public final class Host implements AutoCloseable {
         diagnostics.accept("Saved emitter %s".formatted(instance.name()));
     }
 
-    public synchronized List<String> status() {
-        List<String> lines = new ArrayList<>(devices.status());
-        lines.add("Endpoints: %s".formatted(engine.config()
+    public synchronized HostStatus status() {
+        return new HostStatus(devices.status(), List.copyOf(engine.config()
             .endpoints()
-            .values()));
-        lines.addAll(engine.status());
-        return List.copyOf(lines);
+            .values()), engine.status());
+    }
+
+    /** Snapshot only: no filesystem reads or terminal formatting on this query path. */
+    public synchronized HostConfiguration configuration() {
+        List<HostConfiguration.Provider> providers = plugins.providers()
+            .values()
+            .stream()
+            .sorted(Comparator.comparing(ModuleProvider::type))
+            .map(provider -> new HostConfiguration.Provider(
+                provider.type(), provider.version(), provider.apiVersion(), provider.role()))
+            .toList();
+        return new HostConfiguration(app, applicationYaml,
+            new String(persisted, StandardCharsets.UTF_8).lines()
+                .toList(),
+            providers,
+            RoutingEngine.PROCESSING_CAPACITY, DeviceManager.OUTPUT_CAPACITY);
     }
 
     private void watchPlugins() {

@@ -9,6 +9,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.LongAdder;
 
 import io.midirat.api.ModuleContext;
+import io.midirat.api.ModuleDetails;
 import io.midirat.api.ModuleInstance;
 import io.midirat.api.ModuleWidget;
 import io.midirat.api.MonitorControls;
@@ -22,6 +23,22 @@ import io.midirat.presentation.NoteNames;
 
 public final class MonitorModule implements ModuleInstance, MonitorControls, ModuleWidget {
     private MonitorColumns columns = MonitorColumns.from(SourceNames.empty());
+    private final ModuleWidget compact = new ModuleWidget() {
+        @Override
+        public List<String> lines(int availableLines) {
+            return render(availableLines, false);
+        }
+
+        @Override
+        public boolean elastic() {
+            return true;
+        }
+
+        @Override
+        public boolean colors() {
+            return MonitorModule.this.colors;
+        }
+    };
 
     @Override
     public void start(ModuleContext context) {
@@ -35,7 +52,12 @@ public final class MonitorModule implements ModuleInstance, MonitorControls, Mod
 
     @Override
     public ModuleWidget widget() {
-        return this;
+        return compact;
+    }
+
+    @Override
+    public ModuleDetails details() {
+        return ModuleDetails.of(this, monitorControls());
     }
 
     @Override
@@ -102,6 +124,10 @@ public final class MonitorModule implements ModuleInstance, MonitorControls, Mod
 
     /** Render the newest complete rows within the host's current vertical budget. */
     public List<String> widgetLines(int maxLines) {
+        return render(maxLines, expanded);
+    }
+
+    private List<String> render(int maxLines, boolean expanded) {
         if (!paused) {
             Envelope e;
             while ((e = incoming.poll()) != null) {

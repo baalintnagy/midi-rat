@@ -26,6 +26,13 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'jpackage failed' }
     Copy-Item -LiteralPath (Join-Path $root 'config') -Destination $image -Recurse
     New-Item -ItemType Directory -Force (Join-Path $image 'modules'), (Join-Path $image 'logs') | Out-Null
+    Copy-Item -LiteralPath (Join-Path $root 'extensions/sostenuto/target/sostenuto.jar') `
+        -Destination (Join-Path $image 'modules/sostenuto.jar')
+    foreach ($example in @('wmm-application-sostenuto.yaml', 'wms-application-sostenuto.yaml',
+            'wmm-application-sostenuto-launchpad.yaml', 'wms-application-sostenuto-launchpad.yaml')) {
+        & (Join-Path $image 'MidiRat.exe') --config (Join-Path $image "config/$example") --validate
+        if ($LASTEXITCODE -ne 0) { throw "Packaged external sostenuto validation failed: $example" }
+    }
     Copy-Item -LiteralPath (Join-Path $root 'THIRD-PARTY-NOTICES.md') -Destination $image
     # Some JDK distributions mark launcher/runtime templates read-only. Keep the
     # generated image removable by Maven clean without changing installed JDK files.
