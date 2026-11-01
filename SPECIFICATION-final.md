@@ -1454,7 +1454,9 @@ fan-out, node settings, and connections. Support pan/zoom, both layout direction
 generic examples, editable YAML, and standalone SVG export. The diagram panel has
 Diagram and YAML editor tabs; use Ace for YAML syntax highlighting. Ctrl+scroll zooms
 around the pointer; ordinary scrolling keeps page scrolling. A zoom slider stays in
-sync with the diagram scale. Use the heading "MIDI-Rat Network viewer" without the
+sync with the diagram scale. Preserve the anchor point during zooming out and at
+clamped scale limits. Provide a separate 10–32 px font-size slider for the YAML editor.
+Use the heading "MIDI-Rat Network viewer" without the
 introductory slogan, description, or local-file badge. Validate YAML, structure,
 endpoint references, and routing cycles; full module-settings validation remains the
 host's `--validate` responsibility. Reject aliases, custom tags, duplicate keys, and

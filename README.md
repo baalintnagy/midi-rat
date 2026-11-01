@@ -19,7 +19,8 @@ in your browser and are never uploaded.
 Select nodes to inspect module settings and connections, switch between horizontal and
 vertical layouts, zoom with Ctrl+scroll around the pointer or the zoom slider, pan,
 and export a standalone SVG. Edit YAML with syntax highlighting in the diagram panel's
-YAML editor tab and apply it to redraw the network. Built-in examples cover
+YAML editor tab and apply it to redraw the network. Its separate Editor zoom slider
+adjusts the font size from 10 to 32 pixels. Built-in examples cover
 pedals and chords, transposition, and a setup requiring no hardware. The viewer checks
 structure and wiring; use `MidiRat.exe --config ... --validate` for module validation.
 

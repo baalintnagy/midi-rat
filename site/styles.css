@@ -355,6 +355,14 @@ select {
 }
 .editor-actions {
     padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+#editor-zoom {
+    width: 140px;
+    accent-color: var(--cyan);
 }
 #zoom-slider {
     width: clamp(70px, 12vw, 140px);

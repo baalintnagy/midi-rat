@@ -5,6 +5,7 @@ import { buildNetwork } from './network/model.js';
 import { layoutNetwork } from './network/layout.js';
 import { renderSvg } from './network/svg.js';
 import { examples } from './network/examples.js';
+import { zoomAtPoint } from './network/zoom.js';
 
 const element = (id) => document.getElementById(id);
 const state = {
@@ -442,12 +443,9 @@ function zoomAt(scale, clientX, clientY) {
         return;
     }
     const bounds = viewport.getBoundingClientRect();
-    state.panzoom.zoom(scale, {
-        animate: false,
-        focal: {
-            x: clientX - bounds.left - viewport.clientLeft,
-            y: clientY - bounds.top - viewport.clientTop,
-        },
+    zoomAtPoint(state.panzoom, scale, {
+        x: clientX - bounds.left - viewport.clientLeft,
+        y: clientY - bounds.top - viewport.clientTop,
     });
 }
 viewport.addEventListener(
@@ -495,8 +493,28 @@ graph.addEventListener('keydown', (event) => {
     }
 });
 element('fit').addEventListener('click', fit);
-element('zoom-in').addEventListener('click', () => state.panzoom?.zoomIn());
-element('zoom-out').addEventListener('click', () => state.panzoom?.zoomOut());
+for (const [id, factor] of [
+    ['zoom-in', 1.25],
+    ['zoom-out', 0.8],
+]) {
+    element(id).addEventListener('click', () => {
+        if (!state.panzoom) {
+            return;
+        }
+        const bounds = viewport.getBoundingClientRect();
+        zoomAt(
+            state.panzoom.getScale() * factor,
+            bounds.left + viewport.clientLeft + viewport.clientWidth / 2,
+            bounds.top + viewport.clientTop + viewport.clientHeight / 2,
+        );
+    });
+}
+element('editor-zoom').addEventListener('input', (event) => {
+    const size = Number(event.target.value);
+    editor.setFontSize(size);
+    editor.resize();
+    element('editor-zoom-label').textContent = `${size}px`;
+});
 new ResizeObserver(() => {
     if (state.panzoom) {
         requestAnimationFrame(fit);

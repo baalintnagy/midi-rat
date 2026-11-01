@@ -138,6 +138,9 @@
                     <div id="yaml-panel" role="tabpanel" aria-labelledby="yaml-tab" hidden>
                         <div id="source-text" aria-label="Network YAML source"></div>
                         <div class="editor-actions">
+                            <label for="editor-zoom">Editor zoom</label>
+                            <input id="editor-zoom" type="range" min="10" max="32" value="14" />
+                            <output id="editor-zoom-label" for="editor-zoom">14px</output>
                             <button id="apply-source" type="button" class="secondary-button">
                                 Apply YAML
                             </button>
