@@ -62,6 +62,11 @@ known to the network, for validating origin selectors before activation.
 default adapter still calls legacy `widgetLines()`, so existing providers retain
 their fixed-height behavior without implementing the new optional methods.
 
+`ModuleWidget.preferredWidth()` supplies a preferred minimum in terminal cells,
+including borders and padding (default 24). Content and titles can require more;
+the host constrains the result to the terminal width. The chord widget requests 64
+cells, reserving room even when its current notes are short or empty.
+
 `details()` returns `ModuleDetails` for a dedicated full-screen view. Its default
 adapter presents the ordinary widget and monitor controls, preserving existing
 providers. Override it to supply an `informationTitle()` and `information()` rows

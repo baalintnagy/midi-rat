@@ -95,6 +95,12 @@
 
 ## Warnings, tooling, and verification
 
+- The static Pages viewer lives in `site/` and uses native JavaScript modules and SVG.
+  Prefer established libraries for YAML parsing, graph layout, and interaction. Keep
+  vendored runtime assets unmodified, pinned in the npm lockfile, and licensed.
+  Run `npm test`, `npm run lint`, `npm run format:check`, and `npm run prepare:pages` from `site/`
+  for viewer changes. These checks do not establish Java or MIDI integration results.
+
 - Fix straightforward Java compiler warnings instead of hiding them. If a warning
   cannot readily be fixed, report it with practical options and tradeoffs. This is
   not a blanket warnings-as-errors requirement.

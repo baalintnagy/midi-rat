@@ -4,6 +4,19 @@ The executable JAR retains dependency license and notice resources. Distribution
 must include this notice and the notices shipped in the bundled Temurin runtime.
 The MIDI Rat project's own license remains undecided.
 
+The static network viewer bundles these unmodified browser libraries. Full license
+texts accompany the published assets in `vendor/` (repository path `site/vendor/`).
+
+| Browser component | Version | License / upstream |
+| --- | --- | --- |
+| yaml | 2.9.1 | ISC, https://github.com/eemeli/yaml; `vendor/YAML-LICENSE` |
+| ELK.js | 0.12.0 | EPL-2.0, https://github.com/kieler/elkjs; `vendor/ELK-LICENSE.md` |
+| Panzoom | 4.6.2 | MIT, https://github.com/timmywil/panzoom; `vendor/PANZOOM-LICENSE.txt` |
+
+Prettier 3.9.10 (MIT, https://github.com/prettier/prettier) and ESLint 10.14.0
+(MIT, https://github.com/eslint/eslint) are development tooling and are not included
+in the published site.
+
 The adapted sostenuto processing includes work copyright (c) 2025 Balint Nagy,
 under the MIT license. Its complete notice is retained in the application JAR at
 `META-INF/third-party/sostenuto/LICENSE`.

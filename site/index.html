@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="Explore MIDI Rat YAML networks as interactive diagrams. Open files locally, inspect module settings, and export SVG."
+        />
+        <meta name="color-scheme" content="dark" />
+        <title>MIDI Rat · Network viewer</title>
+        <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="./styles.css" />
+        <script src="./vendor/elk.bundled.js" defer></script>
+        <script src="./app.js" type="module"></script>
+    </head>
+    <body>
+        <a class="skip" href="#viewport">Skip to diagram</a>
+        <main>
+            <header class="masthead">
+                <a class="brand" href="./" aria-label="MIDI Rat home"
+                    ><img src="./favicon.svg" width="34" height="34" alt="" /><strong
+                        >MIDI <span>RAT</span></strong
+                    ><span class="brand-divider"></span><span class="muted">Network viewer</span></a
+                >
+                <a
+                    class="source-link"
+                    href="https://github.com/baalintnagy/midi-rat"
+                    target="_blank"
+                    rel="noreferrer"
+                    >Source on GitHub <span aria-hidden="true">↗</span></a
+                >
+            </header>
+            <section class="intro">
+                <div>
+                    <p class="eyebrow">FROM CONFIGURATION TO CONNECTIONS</p>
+                    <h1>See where your MIDI goes<span>.</span></h1>
+                    <p class="lede">
+                        Turn a network YAML into a signal-flow diagram. Follow the buses,<br
+                            class="desktop-break"
+                        />
+                        inspect the modules, and make sense of the whole setup.
+                    </p>
+                </div>
+                <div class="local-badge">
+                    <span class="live-dot"></span> Files stay in your browser
+                </div>
+            </section>
+            <div class="workbench">
+                <aside class="sidebar" aria-label="Files and node information">
+                    <section class="card import-card">
+                        <div class="section-title">
+                            <h2>Your configuration</h2>
+                            <button id="clear-files" class="text-button" type="button">
+                                Clear
+                            </button>
+                        </div>
+                        <label class="drop-zone" id="drop-zone" for="file-input"
+                            ><span class="upload-icon" aria-hidden="true">↥</span
+                            ><strong>Drop YAML files here</strong
+                            ><span>or <span class="browse-link">browse files</span></span
+                            ><small>Network YAML · optional application YAML</small
+                            ><input
+                                id="file-input"
+                                type="file"
+                                accept=".yaml,.yml,text/yaml,application/yaml"
+                                multiple
+                        /></label>
+                        <p class="small muted import-note">
+                            Add both files to resolve port bindings. A network file also works on
+                            its own.
+                        </p>
+                        <div class="example-row">
+                            <label for="example">Try an example</label
+                            ><select id="example">
+                                <option value="performance">Pedals &amp; chords</option>
+                                <option value="transpose">Octave transpose</option>
+                                <option value="local">No hardware</option></select
+                            ><button id="load-example" type="button" class="secondary-button">
+                                Load
+                            </button>
+                        </div>
+                        <ul id="file-list" class="file-list" aria-label="Loaded files"></ul>
+                        <div class="file-selectors" id="file-selectors" hidden>
+                            <label for="network-select">Network</label
+                            ><select id="network-select"></select>
+                            <label for="application-select">Application</label
+                            ><select id="application-select"></select>
+                        </div>
+                        <details class="source-editor">
+                            <summary>View or edit network YAML</summary>
+                            <label for="source-text" class="sr-only">Network YAML source</label
+                            ><textarea
+                                id="source-text"
+                                spellcheck="false"
+                                rows="12"
+                                placeholder="schemaVersion: 1&#10;network:&#10;  buses: []&#10;  modules: []"
+                            ></textarea
+                            ><button id="apply-source" type="button" class="secondary-button">
+                                Apply YAML
+                            </button>
+                        </details>
+                    </section>
+                    <section class="card inspector" aria-label="Node inspector">
+                        <p id="node-kind" class="eyebrow">INSPECT A NODE</p>
+                        <h2 id="node-name">The details are in the wiring.</h2>
+                        <p id="node-description" class="small muted">
+                            Select a module, bus, or port in the diagram to see its configuration
+                            and connections.
+                        </p>
+                        <div id="node-connections"></div>
+                        <pre id="node-settings" hidden></pre>
+                    </section>
+                </aside>
+                <section class="diagram-card" aria-label="Network diagram">
+                    <div class="diagram-heading">
+                        <div>
+                            <p class="eyebrow">SIGNAL FLOW</p>
+                            <h2 id="diagram-name">Network</h2>
+                        </div>
+                        <div class="diagram-actions">
+                            <label for="direction" class="sr-only">Diagram direction</label
+                            ><select id="direction">
+                                <option value="RIGHT">Left → right</option>
+                                <option value="DOWN">Top ↓ bottom</option></select
+                            ><button id="download" type="button" class="secondary-button" disabled>
+                                ↓ Export SVG
+                            </button>
+                        </div>
+                    </div>
+                    <div class="diagram-meta">
+                        <div id="stats" class="stats" aria-live="polite"></div>
+                        <span id="backend" class="backend"></span>
+                    </div>
+                    <div id="error" class="error" role="alert" hidden></div>
+                    <div id="warnings" class="warnings" aria-live="polite" hidden></div>
+                    <div
+                        class="viewport"
+                        id="viewport"
+                        tabindex="0"
+                        aria-label="Interactive network diagram; drag to pan, use the zoom buttons or scroll to zoom"
+                    >
+                        <div id="graph" class="graph-layer"></div>
+                        <div id="canvas-message" class="canvas-message" role="status">
+                            Preparing the example network…
+                        </div>
+                        <div class="zoom-tools panzoom-exclude">
+                            <button id="zoom-out" aria-label="Zoom out" type="button">−</button
+                            ><output id="zoom-label" aria-label="Zoom level">100%</output
+                            ><button id="zoom-in" aria-label="Zoom in" type="button">+</button
+                            ><span></span><button id="fit" type="button">Fit</button>
+                        </div>
+                    </div>
+                    <div class="diagram-footer">
+                        <div class="legend">
+                            <span><i class="input"></i>Input</span
+                            ><span><i class="module"></i>Module</span
+                            ><span><i class="bus"></i>Bus</span
+                            ><span><i class="output"></i>Output</span>
+                        </div>
+                        <span class="small muted"
+                            >Drag to pan · Scroll to zoom · Select to inspect</span
+                        >
+                    </div>
+                </section>
+            </div>
+            <footer class="page-footer">
+                <span>Built for MIDI Rat · MIDI routing, made visible.</span
+                ><span
+                    >Diagram validation covers structure and wiring. Use MIDI Rat
+                    <code>--validate</code> to check module settings.</span
+                >
+            </footer>
+        </main>
+    </body>
+</html>

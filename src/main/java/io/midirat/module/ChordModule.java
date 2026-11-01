@@ -3,6 +3,7 @@ package io.midirat.module;
 import java.util.List;
 
 import io.midirat.api.ModuleInstance;
+import io.midirat.api.ModuleWidget;
 import io.midirat.chord.ChordRecognizer;
 import io.midirat.chord.HeldNotes;
 import io.midirat.midi.Envelope;
@@ -14,6 +15,17 @@ public final class ChordModule implements ModuleInstance {
     private final ChordRecognizer recognizer;
     private final HeldNotes held = new HeldNotes();
     private volatile List<String> lines = ChordFormat.lines(List.of(), List.of());
+    private final ModuleWidget widget = new ModuleWidget() {
+        @Override
+        public List<String> lines(int availableLines) {
+            return widgetLines();
+        }
+
+        @Override
+        public int preferredWidth() {
+            return 64;
+        }
+    };
 
     public ChordModule(ChordRecognizer recognizer) {
         this.recognizer = recognizer;
@@ -31,5 +43,10 @@ public final class ChordModule implements ModuleInstance {
     @Override
     public List<String> widgetLines() {
         return lines;
+    }
+
+    @Override
+    public ModuleWidget widget() {
+        return widget;
     }
 }

@@ -9,6 +9,38 @@ The terminal workspace provides live counters, colored message logs, adaptive mo
 columns, and full-screen details. Modules run independently on bounded queues; terminal
 rendering does not run on the MIDI processing workers.
 
+## Network viewer
+
+The GitHub Pages network viewer turns network YAML into an interactive signal-flow
+diagram. Browse or drop a network file onto the page; optionally add its application
+YAML to see physical device bindings and the selected backend. Files are parsed locally
+in your browser and are never uploaded.
+
+Select nodes to inspect module settings and connections, switch between horizontal and
+vertical layouts, zoom or pan, and export a standalone SVG. Built-in examples cover
+pedals and chords, transposition, and a setup requiring no hardware. The viewer checks
+structure and wiring; use `MidiRat.exe --config ... --validate` for module validation.
+
+Run the viewer locally with Node.js 24:
+
+```powershell
+cd site
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:4174`. Run `npm test`, `npm run lint`, and `npm run format:check`
+to verify changes.
+The site uses plain HTML, CSS, and JavaScript modules, with YAML parsing by `yaml`,
+diagram layout by ELK.js, and pan/zoom by Panzoom. Runtime dependencies are pinned and
+vendored with their licenses; `npm run vendor` refreshes them after dependency updates.
+
+To publish, select **Settings → Pages → Build and deployment → Source: GitHub Actions**
+in the repository. After the site changes reach `main`, the **Verify and deploy network
+viewer** workflow checks and deploys the static site. It can also be run manually from
+Actions. The project Pages address is `https://baalintnagy.github.io/midi-rat/` once deployed.
+Pull requests run checks without deploying. Only the site's runtime files are published.
+
 ## Quick start
 
 On Windows, extract the portable distribution and open an interactive terminal in its

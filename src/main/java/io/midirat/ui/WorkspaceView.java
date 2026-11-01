@@ -143,7 +143,8 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
             .mapToInt(Line::width)
             .max()
             .orElse(0) + 4;
-        return Math.max(24,
+        return Math.max(pane.widget()
+            .preferredWidth(),
             Math.max(contentWidth, paneTitle(pane, index, true, false).width() + 2));
     }
 

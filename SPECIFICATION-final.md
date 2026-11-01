@@ -1287,6 +1287,11 @@ narrows. Measure terminal display cells, including borders and spacing; use the
 tallest widget to determine each shared row's height. Module data and behavior stay
 unchanged.
 
+**[User chord-width revision, 1 November 2026; design completion]** Give the chord
+widget a wider preferred minimum of 64 terminal cells, including borders and padding.
+Honor widget width preferences through the module API; retain adaptive layout and
+constrain widths to the available terminal width. Other widgets keep the 24-cell default.
+
 **[User presentation revision, 1 November 2026; design completion D20]** Structure
 the compact host widget as full-width Backend, Output, and Modules summary rows only.
 Wrap long values using terminal display cells and allocate their wrapped height.
@@ -1433,6 +1438,25 @@ latency measurement.
 | AC-23 | Run CI and package checks. | Required style/tests/artifact gates after build exists; no dependence on removable companion documents. |
 
 ## 15. Consolidation decisions and release gates
+
+### GitHub Pages network viewer
+
+User requirement: provide a static GitHub Pages site that interprets browsed or
+dragged-and-dropped network YAML and renders a diagram. Use plain HTML/CSS/native
+JavaScript modules and ELK.js with SVG, matching the requested existing technology.
+Use established third-party libraries: `yaml` for parsing, ELK.js for layout, and
+Panzoom for interaction. Pin dependencies and retain their licenses in vendored assets.
+
+Implementation decisions: parse entirely in the browser without uploads or a backend.
+Accept optional application YAML to resolve backend and physical device bindings;
+infer endpoint roles when only a network is provided. Show buses, modules, ports,
+fan-out, node settings, and connections. Support pan/zoom, both layout directions,
+generic examples, editable YAML, and standalone SVG export. Validate YAML, structure,
+endpoint references, and routing cycles; full module-settings validation remains the
+host's `--validate` responsibility. Reject aliases, custom tags, duplicate keys, and
+oversized inputs, consistent with the host's restricted configuration approach.
+Publish an allowlist of runtime assets through a separate checked Pages workflow;
+do not include personal device configurations in the site artifact.
 
 The user confirmed the earlier architecture, backend bridge, application/network
 split, timing instrumentation, explicit backend selection, monitor/text improvements,

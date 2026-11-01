@@ -14,6 +14,11 @@ public interface ModuleWidget {
         return true;
     }
 
+    /** Preferred minimum width in terminal cells, including borders and padding. */
+    default int preferredWidth() {
+        return 24;
+    }
+
     static ModuleWidget fixed(Supplier<List<String>> lines) {
         return _ -> lines.get();
     }
