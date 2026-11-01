@@ -22,6 +22,10 @@ async function sameTree(source, target) {
 test('vendored runtime libraries and licenses match the locked npm packages', async () => {
     await sameTree(resolve(root, 'node_modules/yaml/browser'), resolve(root, 'vendor/yaml'));
     const assets = [
+        ['ace-builds/src-min-noconflict/ace.js', 'ace/ace.js'],
+        ['ace-builds/src-min-noconflict/mode-yaml.js', 'ace/mode-yaml.js'],
+        ['ace-builds/src-min-noconflict/theme-tomorrow_night.js', 'ace/theme-tomorrow_night.js'],
+        ['ace-builds/LICENSE', 'ACE-LICENSE'],
         ['yaml/LICENSE', 'YAML-LICENSE'],
         ['elkjs/lib/elk.bundled.js', 'elk.bundled.js'],
         ['elkjs/lib/elk-worker.min.js', 'elk-worker.min.js'],

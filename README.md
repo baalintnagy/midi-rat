@@ -17,7 +17,9 @@ YAML to see physical device bindings and the selected backend. Files are parsed 
 in your browser and are never uploaded.
 
 Select nodes to inspect module settings and connections, switch between horizontal and
-vertical layouts, zoom or pan, and export a standalone SVG. Built-in examples cover
+vertical layouts, zoom with Ctrl+scroll around the pointer or the zoom slider, pan,
+and export a standalone SVG. Edit YAML with syntax highlighting in the diagram panel's
+YAML editor tab and apply it to redraw the network. Built-in examples cover
 pedals and chords, transposition, and a setup requiring no hardware. The viewer checks
 structure and wiring; use `MidiRat.exe --config ... --validate` for module validation.
 

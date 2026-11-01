@@ -12,6 +12,9 @@
         <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="./styles.css" />
         <script src="./vendor/elk.bundled.js" defer></script>
+        <script src="./vendor/ace/ace.js" defer></script>
+        <script src="./vendor/ace/mode-yaml.js" defer></script>
+        <script src="./vendor/ace/theme-tomorrow_night.js" defer></script>
         <script src="./app.js" type="module"></script>
     </head>
     <body>
@@ -33,17 +36,7 @@
             </header>
             <section class="intro">
                 <div>
-                    <p class="eyebrow">FROM CONFIGURATION TO CONNECTIONS</p>
-                    <h1>See where your MIDI goes<span>.</span></h1>
-                    <p class="lede">
-                        Turn a network YAML into a signal-flow diagram. Follow the buses,<br
-                            class="desktop-break"
-                        />
-                        inspect the modules, and make sense of the whole setup.
-                    </p>
-                </div>
-                <div class="local-badge">
-                    <span class="live-dot"></span> Files stay in your browser
+                    <h1>MIDI-Rat Network viewer</h1>
                 </div>
             </section>
             <div class="workbench">
@@ -87,19 +80,6 @@
                             <label for="application-select">Application</label
                             ><select id="application-select"></select>
                         </div>
-                        <details class="source-editor">
-                            <summary>View or edit network YAML</summary>
-                            <label for="source-text" class="sr-only">Network YAML source</label
-                            ><textarea
-                                id="source-text"
-                                spellcheck="false"
-                                rows="12"
-                                placeholder="schemaVersion: 1&#10;network:&#10;  buses: []&#10;  modules: []"
-                            ></textarea
-                            ><button id="apply-source" type="button" class="secondary-button">
-                                Apply YAML
-                            </button>
-                        </details>
                     </section>
                     <section class="card inspector" aria-label="Node inspector">
                         <p id="node-kind" class="eyebrow">INSPECT A NODE</p>
@@ -134,33 +114,71 @@
                     </div>
                     <div id="error" class="error" role="alert" hidden></div>
                     <div id="warnings" class="warnings" aria-live="polite" hidden></div>
-                    <div
-                        class="viewport"
-                        id="viewport"
-                        tabindex="0"
-                        aria-label="Interactive network diagram; drag to pan, use the zoom buttons or scroll to zoom"
-                    >
-                        <div id="graph" class="graph-layer"></div>
-                        <div id="canvas-message" class="canvas-message" role="status">
-                            Preparing the example network…
-                        </div>
-                        <div class="zoom-tools panzoom-exclude">
-                            <button id="zoom-out" aria-label="Zoom out" type="button">−</button
-                            ><output id="zoom-label" aria-label="Zoom level">100%</output
-                            ><button id="zoom-in" aria-label="Zoom in" type="button">+</button
-                            ><span></span><button id="fit" type="button">Fit</button>
+                    <div class="panel-tabs" role="tablist" aria-label="Network view">
+                        <button
+                            id="diagram-tab"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="diagram-panel"
+                            type="button"
+                        >
+                            Diagram
+                        </button>
+                        <button
+                            id="yaml-tab"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="yaml-panel"
+                            tabindex="-1"
+                            type="button"
+                        >
+                            YAML editor
+                        </button>
+                    </div>
+                    <div id="yaml-panel" role="tabpanel" aria-labelledby="yaml-tab" hidden>
+                        <div id="source-text" aria-label="Network YAML source"></div>
+                        <div class="editor-actions">
+                            <button id="apply-source" type="button" class="secondary-button">
+                                Apply YAML
+                            </button>
                         </div>
                     </div>
-                    <div class="diagram-footer">
-                        <div class="legend">
-                            <span><i class="input"></i>Input</span
-                            ><span><i class="module"></i>Module</span
-                            ><span><i class="bus"></i>Bus</span
-                            ><span><i class="output"></i>Output</span>
-                        </div>
-                        <span class="small muted"
-                            >Drag to pan · Scroll to zoom · Select to inspect</span
+                    <div id="diagram-panel" role="tabpanel" aria-labelledby="diagram-tab">
+                        <div
+                            class="viewport"
+                            id="viewport"
+                            tabindex="0"
+                            aria-label="Interactive network diagram; drag to pan, Ctrl+scroll to zoom"
                         >
+                            <div id="graph" class="graph-layer"></div>
+                            <div id="canvas-message" class="canvas-message" role="status">
+                                Preparing the example network…
+                            </div>
+                            <div class="zoom-tools panzoom-exclude">
+                                <button id="zoom-out" aria-label="Zoom out" type="button">−</button
+                                ><input
+                                    id="zoom-slider"
+                                    type="range"
+                                    min="5"
+                                    max="400"
+                                    value="100"
+                                    aria-label="Diagram zoom"
+                                /><output id="zoom-label" aria-label="Zoom level">100%</output
+                                ><button id="zoom-in" aria-label="Zoom in" type="button">+</button
+                                ><span></span><button id="fit" type="button">Fit</button>
+                            </div>
+                        </div>
+                        <div class="diagram-footer">
+                            <div class="legend">
+                                <span><i class="input"></i>Input</span
+                                ><span><i class="module"></i>Module</span
+                                ><span><i class="bus"></i>Bus</span
+                                ><span><i class="output"></i>Output</span>
+                            </div>
+                            <span class="small muted"
+                                >Drag to pan · Ctrl+scroll to zoom · Select to inspect</span
+                            >
+                        </div>
                     </div>
                 </section>
             </div>

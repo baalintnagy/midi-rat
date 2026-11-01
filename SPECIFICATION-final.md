@@ -1451,7 +1451,11 @@ Implementation decisions: parse entirely in the browser without uploads or a bac
 Accept optional application YAML to resolve backend and physical device bindings;
 infer endpoint roles when only a network is provided. Show buses, modules, ports,
 fan-out, node settings, and connections. Support pan/zoom, both layout directions,
-generic examples, editable YAML, and standalone SVG export. Validate YAML, structure,
+generic examples, editable YAML, and standalone SVG export. The diagram panel has
+Diagram and YAML editor tabs; use Ace for YAML syntax highlighting. Ctrl+scroll zooms
+around the pointer; ordinary scrolling keeps page scrolling. A zoom slider stays in
+sync with the diagram scale. Use the heading "MIDI-Rat Network viewer" without the
+introductory slogan, description, or local-file badge. Validate YAML, structure,
 endpoint references, and routing cycles; full module-settings validation remains the
 host's `--validate` responsibility. Reject aliases, custom tags, duplicate keys, and
 oversized inputs, consistent with the host's restricted configuration approach.

@@ -9,6 +9,7 @@ texts accompany the published assets in `vendor/` (repository path `site/vendor/
 
 | Browser component | Version | License / upstream |
 | --- | --- | --- |
+| Ace | 1.45.2 | BSD-3-Clause, https://github.com/ajaxorg/ace-builds; `vendor/ACE-LICENSE` |
 | yaml | 2.9.1 | ISC, https://github.com/eemeli/yaml; `vendor/YAML-LICENSE` |
 | ELK.js | 0.12.0 | EPL-2.0, https://github.com/kieler/elkjs; `vendor/ELK-LICENSE.md` |
 | Panzoom | 4.6.2 | MIT, https://github.com/timmywil/panzoom; `vendor/PANZOOM-LICENSE.txt` |

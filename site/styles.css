@@ -339,6 +339,27 @@ select {
     color: var(--muted);
     font-size: 10px;
 }
+.panel-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 8px 18px;
+    border-bottom: 1px solid #29394b;
+}
+.panel-tabs [aria-selected='true'] {
+    color: var(--cyan);
+    border-color: var(--cyan);
+}
+#source-text {
+    height: 600px;
+    width: 100%;
+}
+.editor-actions {
+    padding: 12px 18px;
+}
+#zoom-slider {
+    width: clamp(70px, 12vw, 140px);
+    accent-color: var(--cyan);
+}
 .source-editor {
     margin-top: 16px;
     border-top: 1px solid #29394b;
@@ -349,7 +370,7 @@ select {
     font-size: 11px;
     cursor: pointer;
 }
-textarea {
+.source-editor textarea {
     margin: 12px 0 8px;
     width: 100%;
     min-height: 180px;

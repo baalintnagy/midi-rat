@@ -3,6 +3,10 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const assets = [
+    ['ace-builds/src-min-noconflict/ace.js', 'ace/ace.js'],
+    ['ace-builds/src-min-noconflict/mode-yaml.js', 'ace/mode-yaml.js'],
+    ['ace-builds/src-min-noconflict/theme-tomorrow_night.js', 'ace/theme-tomorrow_night.js'],
+    ['ace-builds/LICENSE', 'ACE-LICENSE'],
     ['yaml/browser', 'yaml'],
     ['yaml/LICENSE', 'YAML-LICENSE'],
     ['elkjs/lib/elk.bundled.js', 'elk.bundled.js'],
@@ -17,7 +21,7 @@ for (const [source, destination] of assets) {
         recursive: true,
     });
 }
-const packages = ['yaml', 'elkjs', '@panzoom/panzoom'];
+const packages = ['yaml', 'elkjs', '@panzoom/panzoom', 'ace-builds'];
 for (const name of packages) {
     const metadata = JSON.parse(
         await readFile(resolve(root, 'node_modules', name, 'package.json')),

@@ -21,6 +21,40 @@ const state = {
 };
 const viewport = element('viewport');
 const graph = element('graph');
+const editor = window.ace.edit('source-text', {
+    mode: 'ace/mode/yaml',
+    theme: 'ace/theme/tomorrow_night',
+    tabSize: 2,
+    useSoftTabs: true,
+    showPrintMargin: false,
+    fontSize: 14,
+});
+editor.session.setUseWorker(false);
+
+function showPanel(yaml) {
+    for (const name of ['diagram', 'yaml']) {
+        const active = (name === 'yaml') === yaml;
+        element(`${name}-panel`).hidden = !active;
+        element(`${name}-tab`).setAttribute('aria-selected', String(active));
+        element(`${name}-tab`).tabIndex = active ? 0 : -1;
+    }
+    if (yaml) {
+        editor.resize();
+    } else {
+        requestAnimationFrame(fit);
+    }
+}
+for (const name of ['diagram', 'yaml']) {
+    element(`${name}-tab`).addEventListener('click', () => showPanel(name === 'yaml'));
+    element(`${name}-tab`).addEventListener('keydown', (event) => {
+        if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+            event.preventDefault();
+            const yaml = event.key === 'End' || (event.key !== 'Home' && name === 'diagram');
+            showPanel(yaml);
+            element(`${yaml ? 'yaml' : 'diagram'}-tab`).focus();
+        }
+    });
+}
 
 function message(text) {
     element('canvas-message').textContent = text;
@@ -110,7 +144,7 @@ function showError(error) {
 }
 
 function fit() {
-    if (!state.panzoom || !state.layout) {
+    if (!state.panzoom || !state.layout || !viewport.clientWidth || !viewport.clientHeight) {
         return;
     }
     const { width, height } = state.layout;
@@ -156,7 +190,7 @@ async function draw() {
     element('diagram-name').textContent = 'Network';
     if (!state.files.length) {
         element('file-selectors').hidden = true;
-        element('source-text').value = '';
+        editor.setValue('', -1);
         message('Drop a network YAML file, or load an example to get started.');
         viewport.setAttribute('aria-busy', 'false');
         return;
@@ -165,7 +199,7 @@ async function draw() {
     viewport.setAttribute('aria-busy', 'true');
     const currentFile = state.files.find((file) => file.name === state.networkName);
     if (currentFile) {
-        element('source-text').value = currentFile.text;
+        editor.setValue(currentFile.text, -1);
     }
     try {
         const documents = state.files.map((file) => parseYaml(file.text, file.name));
@@ -179,7 +213,7 @@ async function draw() {
         state.applicationName = application?.name ?? '';
         element('network-select').value = state.networkName;
         element('application-select').value = state.applicationName;
-        element('source-text').value = network.text;
+        editor.setValue(network.text, -1);
         const model = buildNetwork(network, application);
         element('diagram-name').textContent = network.name;
         statistics(model);
@@ -395,18 +429,54 @@ element('application-select').addEventListener('change', (event) => {
 });
 element('apply-source').addEventListener('click', () => {
     const name = state.networkName ?? 'network.yaml';
-    const file = { name, text: element('source-text').value };
+    const file = { name, text: editor.getValue() };
     state.files = [...state.files.filter((current) => current.name !== name), file];
     state.networkName = name;
     state.example = false;
     draw();
+    showPanel(false);
 });
 element('direction').addEventListener('change', draw);
-viewport.addEventListener('wheel', (event) => state.panzoom?.zoomWithWheel(event), {
-    passive: false,
-});
+function zoomAt(scale, clientX, clientY) {
+    if (!state.panzoom) {
+        return;
+    }
+    const bounds = viewport.getBoundingClientRect();
+    state.panzoom.zoom(scale, {
+        animate: false,
+        focal: {
+            x: clientX - bounds.left - viewport.clientLeft,
+            y: clientY - bounds.top - viewport.clientTop,
+        },
+    });
+}
+viewport.addEventListener(
+    'wheel',
+    (event) => {
+        if (!event.ctrlKey || !state.panzoom || event.target.closest('.zoom-tools')) {
+            return;
+        }
+        event.preventDefault();
+        const delta =
+            event.deltaY *
+            (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1);
+        zoomAt(state.panzoom.getScale() * Math.exp(-delta * 0.002), event.clientX, event.clientY);
+    },
+    {
+        passive: false,
+    },
+);
 graph.addEventListener('panzoomchange', (event) => {
     element('zoom-label').textContent = `${Math.round(event.detail.scale * 100)}%`;
+    element('zoom-slider').value = Math.round(event.detail.scale * 100);
+});
+element('zoom-slider').addEventListener('input', (event) => {
+    const bounds = viewport.getBoundingClientRect();
+    zoomAt(
+        Number(event.target.value) / 100,
+        bounds.left + viewport.clientLeft + viewport.clientWidth / 2,
+        bounds.top + viewport.clientTop + viewport.clientHeight / 2,
+    );
 });
 graph.addEventListener('click', (event) => {
     const node = event.target.closest('[data-node]');
