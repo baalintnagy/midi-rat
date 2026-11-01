@@ -249,6 +249,60 @@ for (const direction of ['RIGHT', 'DOWN']) {
     });
 }
 
+for (const direction of ['RIGHT', 'DOWN']) {
+    test(`emitter and sostenuto routes remain visually separate in ${direction}`, async () => {
+        const text = await readFile(
+            resolve(import.meta.dirname, '../../config/network-sostenuto-launchpad.yaml'),
+            'utf8',
+        );
+        const model = buildNetwork(parseYaml(text, 'network.yaml'));
+        const emitter = model.nodes.find((node) => node.name === 'EMT');
+        const targets = model.edges
+            .filter((edge) => edge.source === emitter.id)
+            .map((edge) => model.nodes.find((node) => node.id === edge.target).name);
+        assert.deepEqual(targets, ['postSSB']);
+        const layout = await layoutNetwork(model, direction);
+        const segments = layout.edges.flatMap((edge) =>
+            edge.sections.flatMap((section) => {
+                const points = [
+                    section.startPoint,
+                    ...(section.bendPoints ?? []),
+                    section.endPoint,
+                ];
+                return points
+                    .slice(1)
+                    .map((end, index) => ({ id: edge.id, start: points[index], end }));
+            }),
+        );
+        for (const a of segments) {
+            for (const b of segments) {
+                if (a.id === b.id) {
+                    continue;
+                }
+                for (const [axis, along] of [
+                    ['x', 'y'],
+                    ['y', 'x'],
+                ]) {
+                    const collinear =
+                        Math.abs(a.start[axis] - a.end[axis]) < 0.001 &&
+                        Math.abs(b.start[axis] - b.end[axis]) < 0.001 &&
+                        Math.abs(a.start[axis] - b.start[axis]) < 0.001;
+                    const overlap =
+                        Math.min(
+                            Math.max(a.start[along], a.end[along]),
+                            Math.max(b.start[along], b.end[along]),
+                        ) -
+                        Math.max(
+                            Math.min(a.start[along], a.end[along]),
+                            Math.min(b.start[along], b.end[along]),
+                        );
+                    assert(!collinear || overlap < 0.001, `${a.id} overlaps ${b.id}`);
+                }
+            }
+        }
+    });
+}
+
 test('a selected network still requires a valid application networkFile', () => {
     const application = { name: 'application.yaml', text: 'schemaVersion: 1\napplication: {}' };
     const file = { name: 'network.yaml', text: 'schemaVersion: 1\nnetwork: {modules: []}' };

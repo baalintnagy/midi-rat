@@ -19,25 +19,34 @@ export function elkGraph(model, direction = 'RIGHT') {
             ),
             height: node.kind === 'module' ? 82 : 66,
             layoutOptions: { 'elk.portConstraints': 'FIXED_SIDE' },
-            ports: [
-                {
-                    id: `${node.id}:in`,
-                    width: 4,
-                    height: 4,
-                    layoutOptions: { 'elk.port.side': direction === 'RIGHT' ? 'WEST' : 'NORTH' },
-                },
-                {
-                    id: `${node.id}:out`,
-                    width: 4,
-                    height: 4,
-                    layoutOptions: { 'elk.port.side': direction === 'RIGHT' ? 'EAST' : 'SOUTH' },
-                },
-            ],
+            // Separate ports prevent unrelated routes from sharing a visual junction.
+            ports: model.edges.flatMap((edge) => {
+                const incoming = edge.target === node.id;
+                if (!incoming && edge.source !== node.id) {
+                    return [];
+                }
+                return [
+                    {
+                        id: `${edge.id}:${incoming ? 'in' : 'out'}`,
+                        width: 4,
+                        height: 4,
+                        layoutOptions: {
+                            'elk.port.side': incoming
+                                ? direction === 'RIGHT'
+                                    ? 'WEST'
+                                    : 'NORTH'
+                                : direction === 'RIGHT'
+                                  ? 'EAST'
+                                  : 'SOUTH',
+                        },
+                    },
+                ];
+            }),
         })),
         edges: model.edges.map((edge) => ({
             id: edge.id,
-            sources: [`${edge.source}:out`],
-            targets: [`${edge.target}:in`],
+            sources: [`${edge.id}:out`],
+            targets: [`${edge.id}:in`],
         })),
     };
 }
