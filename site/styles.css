@@ -8,6 +8,115 @@
     --muted: #99a9bd;
     --cyan: #70e1ed;
 }
+.project-links,
+.project-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+}
+.project-links {
+    font-size: 12px;
+}
+.project-links a:hover,
+.getting-started a {
+    color: var(--cyan);
+}
+.project-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: 36px;
+    padding: 40px 0 28px;
+}
+.project-overview h2 {
+    font-size: clamp(26px, 3vw, 40px);
+    margin: 12px 0;
+}
+.project-overview p,
+.feature-card p,
+.getting-started p,
+.viewer-context {
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 14px;
+    max-width: 78ch;
+}
+.project-actions {
+    gap: 10px;
+    margin-top: 22px;
+}
+.project-button {
+    padding: 11px 16px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+}
+.project-button:hover {
+    border-color: var(--cyan);
+}
+.project-button.primary {
+    background: #163b45;
+    color: var(--cyan);
+}
+.project-facts {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+    color: var(--muted);
+    font-size: 13px;
+    border-left: 1px solid var(--border);
+    padding-left: 28px;
+}
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.feature-card {
+    padding: 22px;
+}
+.feature-card h2,
+.getting-started h2 {
+    font-size: 17px;
+}
+.getting-started {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 28px;
+    padding: 24px;
+    margin-top: 18px;
+    align-items: center;
+}
+.getting-started pre {
+    overflow-x: auto;
+    padding: 18px;
+    border-radius: 8px;
+    background: #0c1521;
+    color: var(--cyan);
+    line-height: 1.8;
+}
+#network-viewer {
+    scroll-margin-top: 24px;
+}
+@media (max-width: 760px) {
+    .project-overview,
+    .feature-grid,
+    .getting-started {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .project-facts {
+        border-left: none;
+        padding-left: 0;
+    }
+    .masthead {
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+    .project-links {
+        gap: 12px;
+    }
+}
 * {
     box-sizing: border-box;
 }

@@ -5,10 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta
             name="description"
-            content="Explore MIDI Rat YAML networks as interactive diagrams. Open files locally, inspect module settings, and export SVG."
+            content="MIDI Rat is a terminal MIDI routing utility. Discover its features, download a release, and explore YAML networks as interactive diagrams."
         />
         <meta name="color-scheme" content="dark" />
-        <title>MIDI Rat · Network viewer</title>
+        <title>MIDI Rat · Terminal MIDI utility &amp; network viewer</title>
         <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="./styles.css" />
         <script src="./vendor/elk.bundled.js" defer></script>
@@ -24,19 +24,96 @@
                 <a class="brand" href="./" aria-label="MIDI Rat home"
                     ><img src="./favicon.svg" width="34" height="34" alt="" /><strong
                         >MIDI <span>RAT</span></strong
-                    ><span class="brand-divider"></span><span class="muted">Network viewer</span></a
+                    ><span class="brand-divider"></span
+                    ><span class="muted">Terminal MIDI utility</span></a
                 >
-                <a
-                    class="source-link"
-                    href="https://github.com/baalintnagy/midi-rat"
-                    target="_blank"
-                    rel="noreferrer"
-                    >Source on GitHub <span aria-hidden="true">↗</span></a
-                >
+                <nav class="project-links" aria-label="Project navigation">
+                    <a href="#about">About</a>
+                    <a href="#network-viewer">Network viewer</a>
+                    <a href="https://github.com/baalintnagy/midi-rat/releases">Releases</a>
+                    <a
+                        class="source-link"
+                        href="https://github.com/baalintnagy/midi-rat"
+                        target="_blank"
+                        rel="noreferrer"
+                        >Source on GitHub <span aria-hidden="true">↗</span></a
+                    >
+                </nav>
             </header>
+            <section class="project-overview" id="about" aria-labelledby="about-title">
+                <div>
+                    <p class="eyebrow">THE MIDI RAT TERMINAL UTILITY BEHIND THE NETWORK</p>
+                    <p>
+                        MIDI Rat is a terminal application for routing, inspecting, filtering, and
+                        transforming MIDI messages. Wire physical inputs and outputs through named
+                        buses and modules using YAML, then see what is happening in a live
+                        keyboard-driven workspace.
+                    </p>
+                    <div class="project-actions">
+                        <a
+                            class="project-button primary"
+                            href="https://github.com/baalintnagy/midi-rat/releases/latest"
+                            >Download the latest release ↗</a
+                        >
+                        <a class="project-button" href="https://github.com/baalintnagy/midi-rat"
+                            >Browse source ↗</a
+                        >
+                        <a class="project-button" href="#network-viewer">Explore a network ↓</a>
+                    </div>
+                </div>
+                <div class="project-facts">
+                    <span>YAML configuration &amp; wiring</span>
+                    <span>Live terminal workspace</span>
+                    <span>Extensible with Java modules</span>
+                </div>
+            </section>
+            <section class="feature-grid" aria-label="What MIDI Rat does">
+                <article class="card feature-card">
+                    <h2>Route &amp; transform</h2>
+                    <p>
+                        Connect ports through broadcast buses. Filter messages and remap channels,
+                        notes, controllers, or values before forwarding them.
+                    </p>
+                </article>
+                <article class="card feature-card">
+                    <h2>Inspect &amp; understand</h2>
+                    <p>
+                        Follow traffic in colored monitors with timing, original device, immediate
+                        source, and note labels. Recognize chords from incoming notes.
+                    </p>
+                </article>
+                <article class="card feature-card">
+                    <h2>Send &amp; extend</h2>
+                    <p>
+                        Edit and send MIDI sequences with an emitter. Add external modules as JARs
+                        and inspect their status in focusable widgets and full-screen details.
+                    </p>
+                </article>
+            </section>
+            <section class="getting-started card" aria-labelledby="start-title">
+                <div>
+                    <h2 id="start-title">Start in your terminal</h2>
+                    <p>
+                        The portable Windows release includes its Java runtime. Extract it, open a
+                        terminal in the MidiRat directory, and run these commands. The default
+                        emitter-and-monitor network needs no MIDI hardware.
+                    </p>
+                    <a href="https://github.com/baalintnagy/midi-rat#readme"
+                        >Read the setup guide ↗</a
+                    >
+                </div>
+                <pre aria-label="Quick start commands"><code>.\MidiRat.exe --ports
+.\MidiRat.exe --validate
+.\MidiRat.exe</code></pre>
+            </section>
             <section class="intro">
                 <div>
-                    <h1>MIDI-Rat Network viewer</h1>
+                    <h1 id="network-viewer">MIDI-Rat Network viewer</h1>
+                    <p class="viewer-context">
+                        Explore the YAML wiring used by the MIDI Rat terminal utility. Open a
+                        network file below; add its application YAML to resolve physical port
+                        bindings. This diagram shows configuration, not live traffic.
+                    </p>
                 </div>
             </section>
             <div class="workbench">
@@ -186,6 +263,11 @@
                 </section>
             </div>
             <footer class="page-footer">
+                <nav class="project-links" aria-label="Project resources">
+                    <a href="https://github.com/baalintnagy/midi-rat">Source code ↗</a>
+                    <a href="https://github.com/baalintnagy/midi-rat/releases">All releases ↗</a>
+                    <a href="https://github.com/baalintnagy/midi-rat/issues">Issues ↗</a>
+                </nav>
                 <span>Built for MIDI Rat · MIDI routing, made visible.</span
                 ><span
                     >Diagram validation covers structure and wiring. Use MIDI Rat
