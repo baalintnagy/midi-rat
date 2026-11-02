@@ -19,16 +19,6 @@
     gap: 16px;
     font-size: 14px;
 }
-.project-links a {
-    padding: 9px 13px;
-    border: 1px solid #334157;
-    border-radius: 7px;
-    background: #212a3a;
-    line-height: 1.5;
-}
-.project-links a:hover {
-    filter: brightness(0.94);
-}
 .getting-started a {
     color: var(--cyan);
 }
@@ -55,13 +45,17 @@
     gap: 10px;
     margin-top: 22px;
 }
-.project-button {
+.project-button,
+.project-links a {
     padding: 11px 16px;
     border: 1px solid var(--border);
     border-radius: 7px;
+    color: #e6eef7;
     font-size: 13px;
+    line-height: 1.5;
 }
-.project-button:hover {
+.project-button:hover,
+.project-links a:hover {
     border-color: var(--cyan);
 }
 .project-button.primary {
@@ -235,12 +229,6 @@ h2 {
     min-width: 0;
     color: #9aa9c1;
     font-size: 13px;
-}
-.project-links .source-link {
-    background: #3266a8;
-    color: white;
-    border-color: #3266a8;
-    font-weight: 600;
 }
 .source-link span {
     margin-left: 12px;
@@ -849,9 +837,6 @@ select {
         width: 100%;
         gap: 4px;
         font-size: 12px;
-    }
-    .project-links a {
-        padding: 7px 9px;
     }
     #about,
     #network-viewer {
