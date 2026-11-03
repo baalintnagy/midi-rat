@@ -59,8 +59,16 @@
     border-color: var(--cyan);
 }
 .project-button.primary {
-    background: #163b45;
+    background: linear-gradient(180deg, #205361, #163b45);
     color: var(--cyan);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 16%),
+        0 8px 28px rgb(112 225 237 / 15%);
+}
+.project-button.primary:hover {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 20%),
+        0 10px 32px rgb(112 225 237 / 22%);
 }
 .project-facts {
     display: flex;
@@ -120,6 +128,21 @@
 }
 body {
     margin: 0;
+    /* Four ambient lights, anchored to the viewport behind the page surfaces. */
+    isolation: isolate;
+}
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 760px 540px at 12% 12%, rgb(112 225 237 / 13%), transparent 68%),
+        radial-gradient(ellipse 680px 480px at 76% 8%, rgb(137 119 221 / 10%), transparent 68%),
+        radial-gradient(ellipse 780px 560px at 100% 72%, rgb(85 165 223 / 11%), transparent 68%),
+        radial-gradient(ellipse 720px 480px at 28% 100%, rgb(84 205 153 / 9%), transparent 68%),
+        #0a111a;
 }
 main {
     max-width: 1680px;
@@ -295,6 +318,9 @@ h1 span {
 }
 .card {
     padding: 18px;
+}
+.getting-started.card {
+    background: radial-gradient(ellipse at 8% 0, rgb(112 225 237 / 10%), transparent 65%), #111c29;
 }
 .section-title {
     display: flex;
