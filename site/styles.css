@@ -460,6 +460,56 @@ select {
 #source-text {
     height: 600px;
     width: 100%;
+    background: #0a111a;
+    color: #e6eef7;
+}
+#source-text .ace_gutter {
+    background: #101c29;
+    color: var(--muted);
+    border-right: 1px solid var(--border);
+}
+#source-text .ace_cursor {
+    color: var(--cyan);
+}
+#source-text .ace_marker-layer .ace_selection {
+    background: #234956;
+}
+#source-text .ace_marker-layer .ace_active-line,
+#source-text .ace_gutter-active-line {
+    background: #172e39;
+}
+#source-text .ace_marker-layer .ace_selected-word,
+#source-text .ace_marker-layer .ace_bracket {
+    border-color: var(--cyan);
+}
+#source-text.ace_multiselect .ace_selection.ace_start {
+    box-shadow: 0 0 3px 0 #0a111a;
+}
+#source-text .ace_keyword,
+#source-text .ace_meta,
+#source-text .ace_storage,
+#source-text .ace_entity.ace_name,
+#source-text .ace_entity.ace_other.ace_attribute-name {
+    color: var(--cyan);
+}
+#source-text .ace_string {
+    color: #34d399;
+}
+#source-text .ace_constant,
+#source-text .ace_support.ace_constant {
+    color: #fbbf66;
+}
+#source-text .ace_variable,
+#source-text .ace_support.ace_type,
+#source-text .ace_support.ace_class {
+    color: #9dafff;
+}
+#source-text .ace_comment {
+    color: var(--muted);
+}
+#source-text .ace_fold {
+    background: #163b45;
+    border-color: var(--cyan);
 }
 .editor-actions {
     padding: 12px 18px;
