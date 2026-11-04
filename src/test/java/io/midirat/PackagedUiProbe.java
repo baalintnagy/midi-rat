@@ -49,5 +49,12 @@ public final class PackagedUiProbe {
             throw new IllegalStateException("Bundled runtime did not recognize a C major chord");
         }
         System.out.println("Bundled runtime Tonal chord recognition smoke test passed.");
+        List<String> addedNinth = new TonalChordRecognizer().recognize(List.of(58, 60, 62, 65));
+        if (!addedNinth.subList(0, 2)
+            .equals(List.of("Bbadd9", "A#add9"))) {
+            throw new IllegalStateException(
+                "Incorrect packaged chord order: %s".formatted(addedNinth));
+        }
+        System.out.println("Bundled runtime Bbadd9 ordering smoke test passed.");
     }
 }

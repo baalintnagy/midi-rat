@@ -17,6 +17,22 @@ import org.junit.jupiter.api.Test;
 
 class ChordTest {
     @Test
+    void addedNinthsPrecedeSlashReadingsAndEnharmonicRankingStaysWithinFamilies() {
+        var recognizer = new TonalChordRecognizer();
+        var candidates = recognizer.recognize(List.of(58, 60, 62, 65));
+        assertEquals(List.of("Bbadd9", "A#add9"), candidates.subList(0, 2));
+        assertTrue(candidates.contains("Dm7(no5)/Bb"));
+        assertTrue(candidates.contains("Dm7(no5)/A#"));
+        assertTrue(candidates.indexOf("Dm7(no5)/Bb") < candidates.indexOf("Dm7(no5)/A#"));
+        var minorFourth = recognizer.recognize(List.of(55, 58, 60, 62, 65));
+        assertEquals("Gm7add11", minorFourth.getFirst());
+        var suspended = recognizer.recognize(List.of(56, 61, 63));
+        assertTrue(suspended.contains("Absus4"));
+        assertTrue(suspended.contains("G#sus4"));
+        assertTrue(suspended.indexOf("Absus4") < suspended.indexOf("G#sus4"));
+    }
+
+    @Test
     void majorSeventhsWithoutFifthsWorkAcrossKeysAndInversions() {
         var recognizer = new TonalChordRecognizer();
         assertEquals("Cmaj7(no5)", recognizer.recognize(List.of(60, 64, 71))
@@ -82,12 +98,12 @@ class ChordTest {
     void fourthLabelsDescribeMinorQualityAndMissingFifthsExplicitly() {
         var recognizer = new TonalChordRecognizer();
         assertTrue(recognizer.recognize(List.of(55, 58, 60, 62))
-            .contains("Gmadd4"));
+            .contains("Gmadd11"));
         assertTrue(recognizer.recognize(List.of(55, 58, 60, 62, 65))
-            .contains("Gm7add4"));
+            .contains("Gm7add11"));
         var quartal = recognizer.recognize(List.of(55, 60, 65, 70));
-        assertTrue(quartal.contains("Gm7add4(no5)"));
-        assertFalse(quartal.contains("Gm7add4"));
+        assertTrue(quartal.contains("Gm7add11(no5)"));
+        assertFalse(quartal.contains("Gm7add11"));
         for (int transpose = 0; transpose < 12; transpose++) {
             int offset = transpose;
             var pitches = List.of(55, 60, 65, 70)
@@ -96,19 +112,19 @@ class ChordTest {
                 .toList();
             var labels = recognizer.recognize(pitches);
             assertTrue(labels.stream()
-                .anyMatch(label -> label.contains("m7add4(no5)")));
+                .anyMatch(label -> label.contains("m7add11(no5)")));
             assertFalse(labels.stream()
                 .anyMatch(label -> label.matches("[A-G][#b]*4(/.*)?")));
         }
         assertTrue(recognizer.recognize(List.of(53, 55, 60, 65, 70))
-            .contains("Gm7add4(no5)/F"));
+            .contains("Gm7add11(no5)/F"));
     }
 
     @Test
     void addedFourthWorksAcrossKeysInversionsAndDoublings() {
         var recognizer = new TonalChordRecognizer();
         var example = recognizer.recognize(List.of(48, 55, 60, 64, 65));
-        assertEquals("Cadd4", example.getFirst());
+        assertEquals("Cadd11", example.getFirst());
         assertTrue(example.contains("Emb6b9/C"));
         for (int transpose = 0; transpose < 12; transpose++) {
             for (int inversion = 0; inversion < 4; inversion++) {
@@ -122,7 +138,7 @@ class ChordTest {
                     .toList();
                 var candidates = recognizer.recognize(pitches);
                 assertTrue(candidates.stream()
-                    .anyMatch(label -> label.contains("add4")), candidates.toString());
+                    .anyMatch(label -> label.contains("add11")), candidates.toString());
             }
         }
     }

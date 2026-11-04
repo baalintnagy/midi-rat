@@ -12,6 +12,8 @@ includes these reusable settings:
 ## Current integration status
 
 The root Maven build compiles maintained Java sources with JDK 25 and `-Xlint:all`.
+Spotless explicitly uses LF (`UNIX`) line endings, matching `.editorconfig` and
+avoiding implicit Git-dependent line-ending detection on Windows.
 Spotless 3.10.4 applies the local Eclipse 4.41 profile, explicit import order, import
 cleanup, and the conservative short-text-block conversion. Checkstyle 14.0.0 runs
 through Maven Checkstyle 3.6.0. Both checks bind to `verify`, including tests.
