@@ -64,10 +64,12 @@ their fixed-height behavior without implementing the new optional methods.
 
 `ModuleWidget.preferredWidth()` supplies a preferred minimum in terminal cells,
 including borders and padding (default 24). Content and titles can require more;
-the host constrains the result to the terminal width. The chord widget requests 96
-cells and sostenuto requests 40, reserving roughly two-thirds and one-third of a
+the host constrains the result to the terminal width. The chord widget requests 94
+cells and sostenuto requests 42, reserving roughly two-thirds and one-third of a
 shared row at typical wide terminal sizes, even when their current content is short.
 These are preferred cell widths rather than fixed percentages; narrow layouts stack.
+Spare columns in a shared row go to its widest widget (the first on ties), keeping
+compact neighbors at their content/title minimum instead of expanding them equally.
 
 `details()` returns `ModuleDetails` for a dedicated full-screen view. Its default
 adapter presents the ordinary widget and monitor controls, preserving existing

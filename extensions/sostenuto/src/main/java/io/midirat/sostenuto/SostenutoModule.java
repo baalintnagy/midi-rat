@@ -26,7 +26,7 @@ public final class SostenutoModule implements ModuleInstance {
 
         @Override
         public int preferredWidth() {
-            return 40;
+            return 42;
         }
     };
     private Umbrella umbrella;

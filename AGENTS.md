@@ -8,6 +8,9 @@
   specifications are historical where they conflict with it. All current module
   DSLs, backend/monitor/packaging requirements, and user decisions are included there;
   do not require separate assumptions or companion documents to implement them.
+- The user-requested native Java chord recognizer is specified separately in
+  `docs/chord-specification.md`; it supersedes historical third-party chord-library
+  requirements. Keep that specification, YAML defaults, and recognition tests aligned.
 - The MIDI I/O, filter, monitor, and packaging baseline was inspected during
   specification work and incorporated into the final specification. Preserve its
   direct WinMM/JNA integration, complete monitor fields, and Windows app-image

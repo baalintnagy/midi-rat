@@ -27,9 +27,6 @@ under the MIT license. Its complete notice is retained in the application JAR at
 | TamboUI | 0.6.0 | MIT, https://github.com/tamboui/tamboui |
 | JLine (TamboUI backend) | 3.25.1 | BSD-3-Clause, https://github.com/jline/jline3 |
 | SnakeYAML | 2.5 | Apache-2.0, https://bitbucket.org/snakeyaml/snakeyaml |
-| Tonal | 5.1.3 | MIT, https://github.com/tonaljs/tonal |
-| Rhino | 1.8.1 | MPL-2.0, https://github.com/mozilla/rhino |
-| Babel helpers (generated into Tonal bundle) | See tools/tonal/package-lock.json | MIT, https://github.com/babel/babel |
 | JNA / JNA Platform | 5.18.1 | LGPL-2.1-or-later OR Apache-2.0, https://github.com/java-native-access/jna |
 | Windows MIDI Services SDK | 0.99.92-preview.11 | MIT, https://github.com/microsoft/MIDI |
 | C++/WinRT | 3.0.260520.1 | MIT, https://github.com/microsoft/cppwinrt |

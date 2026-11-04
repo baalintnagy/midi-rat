@@ -124,8 +124,8 @@ spellings, such as `(C#,Db)`.
 
 The chord observer combines its inputs across origins, sources, and MIDI channels.
 It displays recognized candidates and a `Notes` line; `--` means no held notes and
-`unrecognized` means the current set has no match. Recognition uses bundled Tonal
-JavaScript through Rhino, with no Node.js installation or network connection required.
+`unrecognized` means the current set has no match. Recognition uses a native Java recognizer with a YAML-defined vocabulary.
+See [the chord specification](docs/chord-specification.md) for labeling and configuration.
 
 ## Choose a MIDI backend
 
@@ -258,14 +258,14 @@ mvn --batch-mode --no-transfer-progress '-P!windows-package' verify
 
 | Output | Location |
 | --- | --- |
-| Executable host JAR | `target/midi-rat-0.4.1.jar` |
+| Executable host JAR | `target/midi-rat-0.5.0.jar` |
 | Windows application and runtime | `target/jpackage-out/MidiRat/` |
 
 Run the source build with an installed JDK 25:
 
 ```powershell
-java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.4.1.jar --validate
-java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.4.1.jar
+java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.5.0.jar --validate
+java --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.5.0.jar
 ```
 
 Create a distributable ZIP after a successful Windows build:

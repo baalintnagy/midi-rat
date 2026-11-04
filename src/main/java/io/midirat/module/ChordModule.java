@@ -1,6 +1,7 @@
 package io.midirat.module;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import io.midirat.api.ModuleDetails;
 import io.midirat.api.ModuleInstance;
@@ -15,6 +16,7 @@ import io.midirat.presentation.ChordFormat;
 public final class ChordModule implements ModuleInstance, ModuleDetails {
     private final ChordRecognizer recognizer;
     private final int maxChords;
+    private final List<String> recognitionInformation;
     private final HeldNotes held = new HeldNotes();
     private volatile List<String> lines = ChordFormat.lines(List.of(), List.of());
     private final ModuleWidget widget = new ModuleWidget() {
@@ -25,7 +27,7 @@ public final class ChordModule implements ModuleInstance, ModuleDetails {
 
         @Override
         public int preferredWidth() {
-            return 96;
+            return 94;
         }
     };
 
@@ -34,11 +36,17 @@ public final class ChordModule implements ModuleInstance, ModuleDetails {
     }
 
     public ChordModule(ChordRecognizer recognizer, int maxChords) {
+        this(recognizer, maxChords, List.of());
+    }
+
+    public ChordModule(ChordRecognizer recognizer, int maxChords,
+        List<String> recognitionInformation) {
         if (maxChords < 0) {
             throw new IllegalArgumentException("maxChords must be nonnegative");
         }
         this.recognizer = recognizer;
         this.maxChords = maxChords;
+        this.recognitionInformation = List.copyOf(recognitionInformation);
     }
 
     @Override
@@ -81,8 +89,9 @@ public final class ChordModule implements ModuleInstance, ModuleDetails {
 
     @Override
     public List<String> information() {
-        return List.of("maxChords: %d%s".formatted(maxChords,
-            maxChords == 0 ? " (unlimited)" : ""));
+        return Stream.concat(Stream.of("maxChords: %d%s".formatted(maxChords,
+            maxChords == 0 ? " (unlimited)" : "")), recognitionInformation.stream())
+            .toList();
     }
 
     @Override

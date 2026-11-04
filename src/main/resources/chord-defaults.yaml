@@ -1,0 +1,116 @@
+# Native recognizer defaults. Per-instance recognition settings overlay these values.
+spelling: both
+upperStructures: true
+omittedFifth: false
+sixNine: true
+additionStyle: parenthesized
+maxAddedTones: 3
+additions: [b9, '9', '#9', '11', '#11', b13, '13']
+ranking: [alterations, slash, spelling, symbols, complexity, order]
+symbols:
+  minor: m
+  major: maj
+  diminished: dim
+  augmented: aug
+  halfDiminished: m7b5
+bases:
+  - id: major
+    suffix: ""
+    degrees: ["1", "3", "5"]
+  - id: minor
+    suffix: "{minor}"
+    degrees: ["1", "b3", "5"]
+    minor: true
+  - id: diminished
+    suffix: "{diminished}"
+    degrees: ["1", "b3", "b5"]
+    minor: true
+  - id: augmented
+    suffix: "{augmented}"
+    degrees: ["1", "3", "#5"]
+  - id: sus2
+    suffix: "sus2"
+    degrees: ["1", "2", "5"]
+  - id: sus4
+    suffix: "sus4"
+    degrees: ["1", "4", "5"]
+  - id: major6
+    suffix: "6"
+    degrees: ["1", "3", "5", "6"]
+  - id: majorFlat6
+    suffix: "(b6)"
+    degrees: ["1", "3", "5", "b6"]
+  - id: minor6
+    suffix: "{minor}6"
+    degrees: ["1", "b3", "5", "6"]
+    minor: true
+  - id: minorFlat6
+    suffix: "{minor}(b6)"
+    degrees: ["1", "b3", "5", "b6"]
+    minor: true
+  - id: diminished6
+    suffix: "{diminished}6"
+    degrees: ["1", "b3", "b5", "6"]
+    minor: true
+  - id: diminishedFlat6
+    suffix: "{diminished}(b6)"
+    degrees: ["1", "b3", "b5", "b6"]
+    minor: true
+  - id: augmented6
+    suffix: "{augmented}6"
+    degrees: ["1", "3", "#5", "6"]
+  - id: dominant7
+    suffix: "7"
+    degrees: ["1", "3", "5", "b7"]
+    extensionPrefix: ""
+  - id: major7
+    suffix: "{major}7"
+    degrees: ["1", "3", "5", "7"]
+    extensionPrefix: "{major}"
+  - id: minor7
+    suffix: "{minor}7"
+    degrees: ["1", "b3", "5", "b7"]
+    minor: true
+    extensionPrefix: "{minor}"
+  - id: minorMajor7
+    suffix: "{minor}({major}7)"
+    degrees: ["1", "b3", "5", "7"]
+    minor: true
+    extensionPrefix: "{minor}({major}"
+    extensionSuffix: ")"
+  - id: diminished7
+    suffix: "{diminished}7"
+    degrees: ["1", "b3", "b5", "bb7"]
+    minor: true
+    extensionPrefix: "{diminished}"
+  - id: halfDiminished7
+    suffix: "{halfDiminished}"
+    degrees: ["1", "b3", "b5", "b7"]
+    minor: true
+    extensionPrefix: "{minor}"
+    extensionSuffix: "b5"
+  - id: diminishedMajor7
+    suffix: "{diminished}({major}7)"
+    degrees: ["1", "b3", "b5", "7"]
+    minor: true
+    extensionPrefix: "{diminished}({major}"
+    extensionSuffix: ")"
+  - id: augmented7
+    suffix: "{augmented}7"
+    degrees: ["1", "3", "#5", "b7"]
+    extensionPrefix: "{augmented}"
+  - id: augmentedMajor7
+    suffix: "{augmented}({major}7)"
+    degrees: ["1", "3", "#5", "7"]
+    extensionPrefix: "{augmented}({major}"
+    extensionSuffix: ")"
+  - id: susDominant7
+    suffix: "7sus4"
+    degrees: ["1", "4", "5", "b7"]
+    extensionPrefix: ""
+    extensionSuffix: "sus4"
+  - id: susMajor7
+    suffix: "{major}7sus4"
+    degrees: ["1", "4", "5", "7"]
+    extensionPrefix: "{major}"
+    extensionSuffix: "sus4"

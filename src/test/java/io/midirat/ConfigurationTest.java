@@ -164,6 +164,29 @@ class ConfigurationTest {
             .information());
     }
 
+    @Test
+    void chordRecognitionOptionsReachTheNativeRecognizerAndDetails() throws Exception {
+        var config = network(app("[]",
+            """
+            [{name: chord, type: midi-chord, sources: [keyboard], settings:
+              {maxChords: 1, recognition: {symbols: {minor: min}, upperStructures: false}}}]
+            """
+        ));
+        var module = config.instances()
+            .getFirst()
+            .module();
+        for (int pitch : List.of(60, 63, 67)) {
+            module.process(new Envelope(keyboard, 1,
+                MessageCodec.parse("hex", "90 %02X 64".formatted(pitch))));
+        }
+        assertEquals("Chord: Cmin", module.widgetLines()
+            .getFirst());
+        assertTrue(module.details()
+            .information()
+            .stream()
+            .anyMatch(line -> line.contains("minor")));
+    }
+
     @ParameterizedTest
     @ValueSource(
         strings = { "[keyboard]", "[synth]", "[bus, bus]", "[{name: bus}]", "['']", "[1]" })

@@ -85,14 +85,13 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
         int elasticRows = elasticCount == 0 ? 0 : available / elasticCount;
         for (ModuleLayout.Row row : layout) {
             int count = row.elastic() ? elasticRows : row.height();
-            int spare = area.width() - row.width();
             int columns = row.items()
                 .size();
             int x = area.x();
             for (int column = 0; column < columns; column++) {
                 ModuleLayout.Item item = row.items()
                     .get(column);
-                int width = item.width() + spare / columns + (column < spare % columns ? 1 : 0);
+                int width = row.expandedWidth(column, area.width());
                 renderPane(new Rect(x, y, width, count + 2), buffer,
                     panes.get(item.index()), item.index(), count);
                 x += width + ModuleLayout.COLUMN_GAP;

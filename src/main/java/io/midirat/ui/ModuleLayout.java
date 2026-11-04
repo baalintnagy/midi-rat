@@ -28,6 +28,20 @@ final class ModuleLayout {
                 .orElse(0);
         }
 
+        int expandedWidth(int column, int availableWidth) {
+            int widest = 0;
+            for (int index = 1; index < items.size(); index++) {
+                if (items.get(index)
+                    .width() > items.get(widest)
+                        .width()) {
+                    widest = index;
+                }
+            }
+            return items.get(column)
+                .width()
+                + (column == widest ? Math.max(0, availableWidth - width()) : 0);
+        }
+
         boolean elastic() {
             return items.getFirst()
                 .elastic();

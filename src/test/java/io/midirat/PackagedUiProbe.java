@@ -9,7 +9,7 @@ import dev.tamboui.backend.jline3.JLineBackend;
 import dev.tamboui.terminal.Terminal;
 import dev.tamboui.text.Text;
 import dev.tamboui.widgets.paragraph.Paragraph;
-import io.midirat.chord.TonalChordRecognizer;
+import io.midirat.chord.JavaChordRecognizer;
 import org.jline.terminal.Size;
 import org.jline.terminal.TerminalBuilder;
 
@@ -44,17 +44,10 @@ public final class PackagedUiProbe {
             throw new IllegalStateException("Bundled runtime did not render the TamboUI frame");
         }
         System.out.println("Bundled runtime TamboUI smoke test passed.");
-        if (!new TonalChordRecognizer().recognize(List.of(60, 64, 67))
-            .contains("C")) {
-            throw new IllegalStateException("Bundled runtime did not recognize a C major chord");
+        if (!new JavaChordRecognizer().recognize(List.of(45, 48, 52, 54, 59))
+            .contains("Am6/9")) {
+            throw new IllegalStateException("Bundled native Java chord vocabulary did not load");
         }
-        System.out.println("Bundled runtime Tonal chord recognition smoke test passed.");
-        List<String> addedNinth = new TonalChordRecognizer().recognize(List.of(58, 60, 62, 65));
-        if (!addedNinth.subList(0, 2)
-            .equals(List.of("Bbadd9", "A#add9"))) {
-            throw new IllegalStateException(
-                "Incorrect packaged chord order: %s".formatted(addedNinth));
-        }
-        System.out.println("Bundled runtime Bbadd9 ordering smoke test passed.");
+        System.out.println("Bundled Java chord recognition smoke test passed.");
     }
 }

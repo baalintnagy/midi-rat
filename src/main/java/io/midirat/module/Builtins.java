@@ -7,7 +7,8 @@ import java.util.function.BiFunction;
 import io.midirat.api.ModuleInstance;
 import io.midirat.api.ModuleProvider;
 import io.midirat.api.ModuleProvider.Role;
-import io.midirat.chord.TonalChordRecognizer;
+import io.midirat.chord.ChordSettings;
+import io.midirat.chord.JavaChordRecognizer;
 import io.midirat.config.Value;
 import io.midirat.midi.Endpoint;
 import io.midirat.presentation.YamlFormat;
@@ -45,11 +46,15 @@ public final class Builtins {
     }
 
     private static ModuleInstance chord(Value settings, List<Endpoint> sources) {
-        Map<String, Value> fields = settings.mapping("maxChords");
-        return new ChordModule(new TonalChordRecognizer(), fields.containsKey("maxChords")
-            ? fields.get("maxChords")
-                .integer(0, Integer.MAX_VALUE)
-            : 0);
+        Map<String, Value> fields = settings.mapping("maxChords", "recognition");
+        return new ChordModule(new JavaChordRecognizer(fields.containsKey("recognition")
+            ? ChordSettings.read(fields.get("recognition"))
+            : ChordSettings.defaults()), fields.containsKey("maxChords")
+                ? fields.get("maxChords")
+                    .integer(0, Integer.MAX_VALUE)
+                : 0,
+            fields.containsKey("recognition") ? YamlFormat.lines(fields.get("recognition"))
+                : List.of());
     }
 
     private static ModuleInstance emitter(Value settings, List<Endpoint> sources) {
