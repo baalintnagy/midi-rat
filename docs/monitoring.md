@@ -33,7 +33,7 @@ From the repository directory, run the already-built JAR with the installed JDK 
 
 ```powershell
 Set-Location C:\develop\gitrepos\midi-rat
-& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.4.0.jar --config .\config\wmm-application-monitor.yaml
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.4.1.jar --config .\config\wmm-application-monitor.yaml
 ```
 
 Alternatively, use the packaged launcher and its bundled Java runtime:
@@ -106,7 +106,7 @@ payload log to disk.
 To validate the files without opening devices or starting the UI:
 
 ```powershell
-& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.4.0.jar --config .\config\wmm-application-monitor.yaml --validate
+& 'C:\Java\jdk25\bin\java.exe' --enable-native-access=ALL-UNNAMED -jar .\target\midi-rat-0.4.1.jar --config .\config\wmm-application-monitor.yaml --validate
 ```
 
 To rebuild the JAR without invoking native/app-image packaging:
