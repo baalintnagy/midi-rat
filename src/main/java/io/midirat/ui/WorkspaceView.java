@@ -129,10 +129,10 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
 
     private void renderHost(Rect area, Buffer buffer, List<Line> connections) {
         boolean selected = Math.floorMod(focused, instances.size() + 2) == instances.size();
-        Line title = Line.from(span(" %s %d/%d  CONNECTIONS / ACTIVITY ".formatted(
-            selected ? ">" : " ", instances.size() + 1, instances.size() + 2),
+        Line title = Line.from(span("%s%d/%d  CONNECTIONS / ACTIVITY ".formatted(
+            selected ? " > " : " ", instances.size() + 1, instances.size() + 2),
             selected ? Color.LIGHT_CYAN : Color.WHITE, colors));
-        panel(area, buffer, title, connections, selected, colors);
+        panel(area, buffer, title, connections, selected, colors, selected ? 1 : 3);
     }
 
     private int preferredWidth(Pane pane, int index) {
@@ -149,7 +149,7 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
 
     private Line paneTitle(Pane pane, int index, boolean selected, boolean enabled) {
         Line title = Line.from(
-            span(" %s %d/%d  %s  ".formatted(selected ? ">" : " ", index + 1,
+            span("%s%d/%d  %s  ".formatted(selected ? " > " : " ", index + 1,
                 instances.size() + 2, pane.instance()
                     .name()),
                 selected ? Color.LIGHT_CYAN : Color.WHITE, enabled),
@@ -172,11 +172,16 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
                     .lines(contentRows)
                 : pane.rows();
         panel(area, buffer, paneTitle(pane, index, selected, enabled),
-            styled(rows, enabled), selected, enabled);
+            styled(rows, enabled), selected, enabled, selected ? 1 : 3);
     }
 
     static void panel(Rect area, Buffer buffer, Line title, List<Line> rows,
         boolean focused, boolean colors) {
+        panel(area, buffer, title, rows, focused, colors, 1);
+    }
+
+    private static void panel(Rect area, Buffer buffer, Line title, List<Line> rows,
+        boolean focused, boolean colors, int titleInset) {
         area = area.intersection(buffer.area());
         if (area.isEmpty()) {
             return;
@@ -197,13 +202,13 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
             .render(area, buffer);
         // TamboUI 0.6 applies border color over title spans. Compose the title separately
         // so its module-name/type accents remain independent of the border.
-        int titleWidth = Math.min(title.width(), Math.max(0, area.width() - 2));
+        int titleWidth = Math.min(title.width(), Math.max(0, area.width() - titleInset - 1));
         if (titleWidth > 0) {
             Paragraph.builder()
                 .text(Text.from(title))
                 .overflow(Overflow.ELLIPSIS)
                 .build()
-                .render(new Rect(area.x() + 1, area.y(), titleWidth, 1), buffer);
+                .render(new Rect(area.x() + titleInset, area.y(), titleWidth, 1), buffer);
         }
     }
 
@@ -224,7 +229,7 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
 
     private List<Line> header(int width) {
         boolean selected = Math.floorMod(focused, instances.size() + 2) == instances.size() + 1;
-        Line brand = Line.from(span(" %s MIDI Rat ".formatted(selected ? ">" : " "),
+        Line brand = Line.from(span("%sMIDI Rat ".formatted(selected ? " > " : " "),
             selected ? Color.LIGHT_CYAN : Color.WHITE, colors),
             span("(d: open details)", Color.DARK_GRAY, colors));
         if (colors) {

@@ -7,6 +7,11 @@
     --border: #243142;
     --muted: #99a9bd;
     --cyan: #70e1ed;
+    --page-text: #e6eef7;
+    --hover-text: #effdff;
+    --hover-glow: rgb(112 225 237 / 28%);
+    --brand-glow: rgb(112 225 237 / 65%);
+    --control-hover-shadow: 0 0 0 1px var(--cyan), 0 3px 16px var(--hover-glow);
 }
 .project-links,
 .project-actions {
@@ -50,7 +55,7 @@
     padding: 11px 16px;
     border: 1px solid var(--border);
     border-radius: 7px;
-    color: #e6eef7;
+    color: var(--page-text);
     font-size: 13px;
     line-height: 1.5;
 }
@@ -161,14 +166,11 @@ button {
     border: 1px solid var(--border);
     border-radius: 7px;
     background: transparent;
-    color: #e1eaf5;
+    color: var(--page-text);
     padding: 7px 12px;
     font-size: 12px;
     font-weight: 600;
     transition: border-color 0.15s;
-}
-button:hover {
-    border-color: #58718e;
 }
 button:disabled {
     opacity: 0.45;
@@ -953,6 +955,137 @@ select {
     }
     .page-footer span {
         width: 100%;
+    }
+}
+/* Shared page interactions; graph artwork and its selection states stay independent. */
+a:is(:hover, :focus-visible) {
+    color: var(--cyan);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+button:not(:disabled):is(:hover, :focus-visible),
+.project-button:is(:hover, :focus-visible),
+.project-links a:is(:hover, :focus-visible),
+select:is(:hover, :focus-visible),
+.drop-zone:is(:hover, :focus-within),
+body.dragging .drop-zone {
+    border-color: var(--cyan);
+    color: var(--hover-text);
+    box-shadow: var(--control-hover-shadow);
+    text-decoration: none;
+}
+button.text-button:not(:disabled):is(:hover, :focus-visible),
+.file-list button:not(:disabled):is(:hover, :focus-visible) {
+    color: var(--cyan);
+    box-shadow: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.brand:is(:hover, :focus-visible) {
+    color: var(--hover-text);
+    text-decoration: none;
+    text-shadow:
+        0 0 12px var(--brand-glow),
+        0 0 3px var(--brand-glow);
+}
+.brand:is(:hover, :focus-visible) img {
+    filter: drop-shadow(0 0 4px var(--brand-glow));
+    box-shadow:
+        0 0 6px var(--hover-glow),
+        0 0 14px var(--hover-glow);
+}
+/* Glow the slider artwork directly, like the brand mark, without a control box. */
+:is(#zoom-slider, #editor-zoom) {
+    cursor: pointer;
+}
+:is(#zoom-slider, #editor-zoom):is(:hover, :focus-visible, :active) {
+    filter: drop-shadow(0 0 4px var(--brand-glow));
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        color-scheme: light;
+        color: #243b4a;
+        background: #eaf0f3;
+        --page-text: #243b4a;
+        --border: #b6cbd3;
+        --muted: #526b7b;
+        --cyan: #126779;
+        --hover-text: #103e4a;
+        --hover-glow: rgb(18 103 121 / 22%);
+        --brand-glow: rgb(18 103 121 / 45%);
+    }
+    body::before {
+        background:
+            radial-gradient(ellipse at 12% 12%, rgb(70 160 179 / 12%), transparent 68%),
+            radial-gradient(ellipse at 100% 72%, rgb(85 165 223 / 10%), transparent 68%), #eaf0f3;
+    }
+    .masthead {
+        background: #f4f8facc;
+        color: var(--page-text);
+        border-color: var(--border);
+    }
+    .header-description,
+    .eyebrow,
+    .page-footer,
+    .page-footer code {
+        color: var(--muted);
+    }
+    .card {
+        background: #f5f9fb;
+    }
+    .getting-started.card {
+        background:
+            radial-gradient(ellipse at 8% 0, rgb(18 103 121 / 8%), transparent 65%), #f5f9fb;
+    }
+    .getting-started pre,
+    .file-list li {
+        background: #e4eef2;
+    }
+    .sidebar select {
+        color: var(--page-text);
+        background: #eaf2f5;
+        border-color: var(--border);
+    }
+    .drop-zone > span:not(.upload-icon),
+    .drop-zone small,
+    .text-button,
+    .file-list button,
+    .inspector pre,
+    .connection-list,
+    .connection-list strong {
+        color: var(--muted);
+    }
+    /* Preserve the existing dark diagram canvas, legend, and editor palette. */
+    .diagram-card {
+        color-scheme: dark;
+        color: #e6eef7;
+        --border: #243142;
+        --muted: #99a9bd;
+        --cyan: #70e1ed;
+        --hover-text: #effdff;
+        --hover-glow: rgb(112 225 237 / 28%);
+        --brand-glow: rgb(112 225 237 / 65%);
+        --page-text: #e6eef7;
+        --control-hover-shadow: 0 0 0 1px var(--cyan), 0 3px 16px var(--hover-glow);
+    }
+    .diagram-card .eyebrow {
+        color: #91a8c2;
+    }
+}
+@media (prefers-reduced-motion: no-preference) {
+    a,
+    button,
+    select,
+    .drop-zone,
+    .brand img,
+    #zoom-slider,
+    #editor-zoom {
+        transition:
+            color 150ms ease,
+            border-color 150ms ease,
+            box-shadow 150ms ease,
+            text-shadow 150ms ease,
+            filter 150ms ease;
     }
 }
 @media (prefers-reduced-motion: reduce) {
