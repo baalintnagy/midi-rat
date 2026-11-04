@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.midirat</groupId>
     <artifactId>midi-rat-parent</artifactId>
-    <version>0.3.1</version>
+    <version>0.4.0</version>
   </parent>
   <artifactId>midi-rat</artifactId>
   <properties><midirat.style.skip>true</midirat.style.skip></properties>

@@ -29,7 +29,7 @@ public final class TonalChordRecognizer implements ChordRecognizer {
             context.evaluateString(scope,
                 """
                 Tonal.ChordType.add(["1P", "3M", "4P", "5P"],
-                    ["add4", "add11"], "major added fourth");
+                    ["add11", "add4"], "major added fourth");
                 Tonal.ChordType.add(["1P", "3m", "7m"],
                     ["m7(no5)"], "minor seventh without fifth");
                 Tonal.ChordType.add(["1P", "3M", "7M"],
@@ -78,20 +78,41 @@ public final class TonalChordRecognizer implements ChordRecognizer {
                     }).map(function(label, index) {
                         var quality = label.replace(/^[A-G][#b]*/, "")
                             .split(/[/](?=[A-G])/)[0];
+                        var root = label.match(/^[A-G][#b]*/)[0];
+                        var bass = label.split(/[/](?=[A-G])/)[1];
+                        var key = /^m(?!aj)/.test(quality)
+                            ? Tonal.Key.minorKey(root) : Tonal.Key.majorKey(root);
                         return { label: label, index: index, alterations: alterations(label),
+                            signature: Math.abs(key.alteration),
+                            bassSignature: bass ? Math.abs(Tonal.Key.majorKey(bass).alteration) : 0,
+                            family: [Tonal.Note.chroma(root), quality,
+                                bass ? Tonal.Note.chroma(bass) : ""].join(":"),
                             quality: (quality.match(/[#b]/g) || []).length,
                             slash: /[/][A-G]/.test(label) ? 1 : 0,
                             size: Tonal.Chord.get(label.split(/[/](?=[A-G])/)[0]).notes.length,
                             symbols: (label.match(/[#b]/g) || []).length };
                     }).sort(function(left, right) {
                         return left.quality - right.quality
+                            || left.slash - right.slash
                             || left.alterations - right.alterations
-                            || left.symbols - right.symbols || left.slash - right.slash
+                            || left.symbols - right.symbols
                             || (left.slash && right.slash ? left.size - right.size : 0)
                             || left.index - right.index;
+                    }).map(function(candidate, index, all) {
+                        var peers = all.filter(function(other) {
+                            return other.family === candidate.family;
+                        }).sort(function(left, right) {
+                            return left.signature - right.signature
+                                || left.bassSignature - right.bassSignature
+                                || all.indexOf(left) - all.indexOf(right);
+                        });
+                        var position = all.slice(0, index).filter(function(other) {
+                            return other.family === candidate.family;
+                        }).length;
+                        return peers[position];
                     }).map(function(candidate) {
-                        return candidate.label.replace(/^([A-G][#b]*)4(?=$|[/])/, "$1m7add4(no5)")
-                            .replace(/^([A-G][#b]*)m7add11(?=$|[/])/, "$1m7add4")
+                        return candidate.label.replace(/^([A-G][#b]*)4(?=$|[/])/, "$1m7add11(no5)")
+                            .replace(/add4/g, "add11")
                             .replace(/^([A-G][#b]*)M(?=$|[/]|add)/, "$1")
                             .replace(/^([A-G][#b]*)M/, "$1maj");
                     });

@@ -675,9 +675,9 @@ Implementation decision: zero or omission retains unlimited display; examples us
 module details, not in the workspace widget.
 
 **[User addition, 4 November 2026]** Support major added-fourth labels such as
-`Cadd4` ahead of altered interpretations of the same notes. Implementation decision:
+`Cadd11` ahead of altered interpretations of the same notes. Implementation decision:
 register the missing general `1P 3M 4P 5P` chord type through Tonal's supported
-`ChordType.add` API, with `add4` as the preferred alias and `add11` as an equivalent
+`ChordType.add` API, with `add11` as the preferred alias and `add4` as an equivalent
 alias. This narrow dictionary extension applies to all roots and inversions; Tonal
 continues to perform recognition. Retain its alternative interpretations.
 
@@ -686,6 +686,13 @@ such as C–Eb–Bb as `Cm7(no5)`. Register the general `1P 3m 7m` type through 
 same Tonal extension API, supporting all roots and inversions without adding notes.
 Major sevenths with an omitted fifth are also supported through the general
 `1P 3M 7M` type, labeled `maj7(no5)` (for example C–E–B as Cmaj7(no5)).
+
+**[User clarification, 4 November 2026]** Among equally altered chord qualities,
+prefer root-position readings over slash alternatives (Bbadd9 before Dm7(no5)/Bb).
+Key-signature preference applies only within the same enharmonic root/quality/bass
+family. Compare root signature complexity (natural minor for minor qualities, major
+otherwise), then bass major-key signature complexity; preserve other interpretations'
+positions. Thus /Bb precedes /A# without promoting C11/G over Gm7add11.
 
 ```yaml
 - name: input-chord

@@ -8,6 +8,7 @@ $documents = @(
 )
 $requiredFiles = $documents + @(
     '.editorconfig'
+    '.gitattributes'
     'eclipse/java-style.properties'
     'checkstyle/checkstyle.xml'
     '.github/workflows/build.yml'
@@ -18,6 +19,15 @@ foreach ($relativePath in $requiredFiles) {
     if (-not (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
         throw "Required file is missing: $relativePath"
     }
+}
+
+$javaSources = @(& git -C $repositoryRoot ls-files -- '*.java')
+if ($LASTEXITCODE -ne 0) {
+    throw 'Cannot inspect tracked Java sources for the LF checkout policy.'
+}
+$attributes = @(& git -C $repositoryRoot check-attr eol -- @javaSources)
+if ($LASTEXITCODE -ne 0 -or @($attributes | Where-Object { $_ -notmatch ': eol: lf$' }).Count -gt 0) {
+    throw 'All tracked Java sources must have Git eol=lf, matching Spotless and .editorconfig.'
 }
 
 foreach ($relativePath in $documents) {

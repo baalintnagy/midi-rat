@@ -12,6 +12,17 @@ includes these reusable settings:
 ## Current integration status
 
 The root Maven build compiles maintained Java sources with JDK 25 and `-Xlint:all`.
+Spotless explicitly uses LF (`UNIX`) line endings, matching `.editorconfig` and
+avoiding implicit Git-dependent line-ending detection on Windows.
+`.gitattributes` also requires LF for text checkouts, overriding Windows
+`core.autocrlf=true`. Binary files retain Git's automatic binary detection. Keep
+this checkout policy aligned with Spotless: editor settings alone do not control
+GitHub Actions checkouts, and CI checks formatting without rewriting source files.
+The shared configuration validation script checks Git's effective `eol` attribute
+for every tracked Java source, rejecting conflicting or missing LF policies before
+the build. A fresh export with `core.autocrlf=true` must pass Spotless without an
+automatic formatting step; this verifies checkout behavior rather than just a
+previously formatted working tree.
 Spotless 3.10.4 applies the local Eclipse 4.41 profile, explicit import order, import
 cleanup, and the conservative short-text-block conversion. Checkstyle 14.0.0 runs
 through Maven Checkstyle 3.6.0. Both checks bind to `verify`, including tests.
