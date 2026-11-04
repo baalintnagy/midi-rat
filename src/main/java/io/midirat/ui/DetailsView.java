@@ -57,7 +57,7 @@ record DetailsView(String name, String type, ModuleDetails details, State state,
                 Color.LIGHT_BLUE, enabled));
             WorkspaceView.panel(new Rect(area.x(), y, area.width(), height), buffer, title,
                 information.subList(offset, Math.min(information.size(), offset + visible)),
-                false, enabled);
+                true, enabled);
             y += height + 1;
         }
         renderContent(new Rect(area.x(), y, area.width(), Math.max(0, area.bottom() - y)), buffer);
@@ -84,7 +84,7 @@ record DetailsView(String name, String type, ModuleDetails details, State state,
                     rows.isEmpty() ? 0 : offset + 1, Math.min(rows.size(), offset + height),
                     rows.size()),
                 Color.LIGHT_BLUE, enabled)),
-                rows.subList(offset, Math.min(rows.size(), offset + height)), false, enabled);
+                rows.subList(offset, Math.min(rows.size(), offset + height)), true, enabled);
             return;
         }
         List<Line> rows = widget.lines(height)
@@ -98,7 +98,7 @@ record DetailsView(String name, String type, ModuleDetails details, State state,
         int offset = state.horizontal.position(fullWidth - width);
         WorkspaceView.panel(area, buffer, Line.from(ModuleTextStyle.span(
             " %s LOG  | m page | < > pan | column %d ".formatted(details.mode(), offset + 1),
-            Color.LIGHT_BLUE, enabled)), List.of(), false, enabled);
+            Color.LIGHT_BLUE, enabled)), List.of(), true, enabled);
         if (width == 0
             || height == 0) {
             return;

@@ -664,9 +664,28 @@ time. Copy-message strips source/time/colors and emits the syntax in Section 9.
 ### 7.1 MIDI-Chord observer
 
 **[User addition, 30 October 2026]** Register `midi-chord` as an observer with one or
-more sources, no destinations, and `settings: {}`. Display names supplied by an
+more sources and no destinations. Display names supplied by an
 established chord recognition library; do not implement a custom chord dictionary
 or recognition algorithm. Use Tonal 5.1.3 embedded through Rhino 1.8.1.
+
+**[User addition, 4 November 2026]** Accept optional `settings.maxChords`, a
+nonnegative integer limiting the ranked chord candidates displayed simultaneously.
+Implementation decision: zero or omission retains unlimited display; examples use
+8. Apply the cap after ranking, retaining the Notes line. Show the setting only in
+module details, not in the workspace widget.
+
+**[User addition, 4 November 2026]** Support major added-fourth labels such as
+`Cadd4` ahead of altered interpretations of the same notes. Implementation decision:
+register the missing general `1P 3M 4P 5P` chord type through Tonal's supported
+`ChordType.add` API, with `add4` as the preferred alias and `add11` as an equivalent
+alias. This narrow dictionary extension applies to all roots and inversions; Tonal
+continues to perform recognition. Retain its alternative interpretations.
+
+**[User addition, 4 November 2026]** Recognize minor sevenths with an omitted fifth,
+such as C–Eb–Bb as `Cm7(no5)`. Register the general `1P 3m 7m` type through the
+same Tonal extension API, supporting all roots and inversions without adding notes.
+Major sevenths with an omitted fifth are also supported through the general
+`1P 3M 7M` type, labeled `maj7(no5)` (for example C–E–B as Cmaj7(no5)).
 
 ```yaml
 - name: input-chord

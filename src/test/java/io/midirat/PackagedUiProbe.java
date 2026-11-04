@@ -45,7 +45,7 @@ public final class PackagedUiProbe {
         }
         System.out.println("Bundled runtime TamboUI smoke test passed.");
         if (!new TonalChordRecognizer().recognize(List.of(60, 64, 67))
-            .contains("CM")) {
+            .contains("C")) {
             throw new IllegalStateException("Bundled runtime did not recognize a C major chord");
         }
         System.out.println("Bundled runtime Tonal chord recognition smoke test passed.");

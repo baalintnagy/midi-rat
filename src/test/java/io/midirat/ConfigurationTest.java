@@ -116,7 +116,7 @@ class ConfigurationTest {
     }
 
     @Test
-    void chordObserverLoadsWithSourcesAndRejectsSettingsOrDestinations() throws Exception {
+    void chordObserverLoadsWithSourcesAndRejectsUnknownSettingsOrDestinations() throws Exception {
         var config = network(app("[]",
             "[{name: chord, type: midi-chord, sources: [keyboard], settings: {}}]"));
         assertEquals("Chord: --", config.instances()
@@ -136,6 +136,32 @@ class ConfigurationTest {
               settings: {unknown: true}}]
             """
         )));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "-1", "1.5", "true", "'5'" })
+    void chordLimitRejectsInvalidValues(String limit) throws Exception {
+        assertThrows(IllegalArgumentException.class, () -> network(app("[]",
+            """
+            [{name: chord, type: midi-chord, sources: [keyboard],
+              settings: {maxChords: %s}}]
+            """
+                .formatted(limit))));
+    }
+
+    @Test
+    void chordLimitLoadsFromYaml() throws Exception {
+        var config = network(app("[]",
+            """
+            [{name: chord, type: midi-chord, sources: [keyboard],
+              settings: {maxChords: 5}}]
+            """
+        ));
+        assertEquals(List.of("maxChords: 5"), config.instances()
+            .getFirst()
+            .module()
+            .details()
+            .information());
     }
 
     @ParameterizedTest

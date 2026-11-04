@@ -47,7 +47,7 @@ network:
     - name: CHRD
       type: midi-chord
       sources: [sostenuto-output]
-      settings: {}
+      settings: {maxChords: 8}
     - name: EMT
       type: midi-emitter
       destinations: [postSSB]

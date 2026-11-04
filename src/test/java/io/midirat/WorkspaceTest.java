@@ -99,7 +99,7 @@ class WorkspaceTest {
             assertTrue(screen.contains(">MIDIRat"), screen);
         }
         if (keys.equals("host")) {
-            assertTrue(screen.contains(">3/4"), screen);
+            assertTrue(screen.contains(">CONNECTIONS/ACTIVITY"), screen);
             assertTrue(screen.contains("APPLICATIONCONFIGURATION"), screen);
             assertTrue(screen.contains("NETWORKCONFIGURATION"), screen);
         } else if (keys.equals("help")) {

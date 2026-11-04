@@ -21,7 +21,7 @@ network:
     - name: input-chord
       type: midi-chord
       sources: [monitor-input]
-      settings: {}
+      settings: {maxChords: 8}
     - name: all-inputs-monitor
       type: midi-monitor
       sources: [monitor-input]

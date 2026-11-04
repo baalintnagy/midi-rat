@@ -77,6 +77,6 @@ record HostDetailsView(HostStatus status, List<String> configuration, List<Strin
                 Math.min(rows.size(), offset + visible),
                 rows.size()),
             Color.LIGHT_BLUE, colors)),
-            rows.subList(offset, Math.min(rows.size(), offset + visible)), false, colors);
+            rows.subList(offset, Math.min(rows.size(), offset + visible)), true, colors);
     }
 }

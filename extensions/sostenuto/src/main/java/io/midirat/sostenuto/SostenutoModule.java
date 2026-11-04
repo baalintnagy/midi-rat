@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import io.midirat.api.ModuleContext;
 import io.midirat.api.ModuleInstance;
+import io.midirat.api.ModuleWidget;
 import io.midirat.midi.Envelope;
 import io.midirat.midi.MessageType;
 import io.midirat.midi.MidiMessage;
@@ -17,6 +18,17 @@ public final class SostenutoModule implements ModuleInstance {
     private final SostenutoState state;
     private final SostenutoTrigger trigger;
     private volatile List<String> lines;
+    private final ModuleWidget widget = new ModuleWidget() {
+        @Override
+        public List<String> lines(int availableLines) {
+            return widgetLines();
+        }
+
+        @Override
+        public int preferredWidth() {
+            return 40;
+        }
+    };
     private Umbrella umbrella;
     private boolean closed;
 
@@ -92,16 +104,21 @@ public final class SostenutoModule implements ModuleInstance {
     private void updateDisplay() {
         Status status = state.status();
         lines = List.of(
-            "Sustain channels: %d | Sostenuto channels: %d | Umbrella: %s".formatted(
+            "Sus-Ch: %d | Sos-Ch: %d | Umb: %s".formatted(
                 status.sustain(), status.sostenuto(), settings.umbrella()
                     .enabled() ? "on" : "off"),
-            "Pressed: %d | Latched: %d | Retained note-offs: %d".formatted(
+            "Pressed: %d | Latched: %d | Retained: %d".formatted(
                 status.pressed(), status.latched(), status.deferred()));
     }
 
     @Override
     public List<String> widgetLines() {
         return lines;
+    }
+
+    @Override
+    public ModuleWidget widget() {
+        return widget;
     }
 
     @Override

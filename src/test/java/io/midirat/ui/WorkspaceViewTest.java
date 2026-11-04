@@ -111,7 +111,7 @@ class WorkspaceViewTest {
         String text = text(buffer);
         assertTrue(text.contains("first-monitor"));
         assertTrue(text.contains("second-monitor"));
-        assertTrue(text.contains("> 2/4"));
+        assertTrue(text.contains("> second-monitor"));
         assertTrue(text.contains("╭"));
         assertTrue(area.positions()
             .anyMatch(position -> buffer.get(position)
@@ -137,14 +137,14 @@ class WorkspaceViewTest {
             instance("chord",
                 ModuleWidget.fixed(() -> List.of("Chord: CM", "Notes: C, E, G"))),
             instance("emitter", ModuleWidget.fixed(() -> List.of("Messages: 0"))));
-        for (int width : List.of(60, 160)) {
+        for (int width : List.of(40, 160)) {
             var area = Rect.of(width, 30);
             var buffer = Buffer.empty(area);
             view(instances, 1, true).render(area, buffer);
             String rendered = text(buffer);
-            int firstRow = rendered.indexOf("1/5") / (width + 1);
-            int secondRow = rendered.indexOf("> 2/5") / (width + 1);
-            int thirdRow = rendered.indexOf("3/5") / (width + 1);
+            int firstRow = rendered.indexOf(" filter ") / (width + 1);
+            int secondRow = rendered.indexOf("> chord") / (width + 1);
+            int thirdRow = rendered.indexOf(" emitter ") / (width + 1);
             if (width == 160) {
                 assertEquals(firstRow, secondRow);
                 assertEquals(secondRow, thirdRow);
@@ -172,15 +172,15 @@ class WorkspaceViewTest {
         var buffer = Buffer.empty(area);
         view(instances, 1, true).render(area, buffer);
         String rendered = text(buffer);
-        int monitorRow = rendered.indexOf("> 2/6") / (area.width() + 1);
+        int monitorRow = rendered.indexOf("> monitor") / (area.width() + 1);
         assertEquals("╭", buffer.get(0, monitorRow)
             .symbol());
         assertEquals("╮", buffer.get(area.width() - 1, monitorRow)
             .symbol());
-        assertTrue(rendered.indexOf("1/6") < rendered.indexOf("> 2/6"));
-        assertTrue(rendered.indexOf("> 2/6") < rendered.indexOf("3/6"));
-        assertEquals(rendered.indexOf("3/6") / (area.width() + 1),
-            rendered.indexOf("4/6") / (area.width() + 1));
+        assertTrue(rendered.indexOf(" filter ") < rendered.indexOf("> monitor"));
+        assertTrue(rendered.indexOf("> monitor") < rendered.indexOf(" chord "));
+        assertEquals(rendered.indexOf(" chord ") / (area.width() + 1),
+            rendered.indexOf(" emitter ") / (area.width() + 1));
         assertTrue(monitor.budget > 1);
     }
 
@@ -194,7 +194,7 @@ class WorkspaceViewTest {
             String rendered = text(buffer);
             assertTrue(rendered.contains("CONNECTIONS / ACTIVITY"));
             assertFalse(rendered.contains("d details"));
-            assertTrue(rendered.contains("> 1/2"));
+            assertTrue(rendered.contains("> CONNECTIONS / ACTIVITY"));
             assertTrue(rendered.contains("Backend: winmm | inputs=8 outputs=1"));
             assertTrue(rendered.contains("Output: postSSB -> postSSB | open | queue=0 lost=0"));
             assertTrue(rendered.contains("Modules:"));
@@ -240,7 +240,7 @@ class WorkspaceViewTest {
         var buffer = Buffer.empty(area);
         view(instances, 1, true).render(area, buffer);
         assertEquals(1, hidden.budget);
-        assertTrue(text(buffer).contains("> 2/3"));
+        assertTrue(text(buffer).contains("> CONNECTIONS / ACTIVITY"));
         assertTrue(text(buffer).contains("Backend:"));
         assertFalse(text(buffer).contains("hidden-monitor"));
     }

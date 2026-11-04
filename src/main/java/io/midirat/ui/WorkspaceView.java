@@ -53,7 +53,7 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
         List<ModuleLayout.Item> items = new ArrayList<>();
         for (int i = 0; i < panes.size(); i++) {
             Pane pane = panes.get(i);
-            items.add(new ModuleLayout.Item(i, preferredWidth(pane, i), pane.rows()
+            items.add(new ModuleLayout.Item(i, preferredWidth(pane), pane.rows()
                 .size(),
                 pane.widget()
                     .elastic()));
@@ -129,13 +129,13 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
 
     private void renderHost(Rect area, Buffer buffer, List<Line> connections) {
         boolean selected = Math.floorMod(focused, instances.size() + 2) == instances.size();
-        Line title = Line.from(span("%s%d/%d  CONNECTIONS / ACTIVITY ".formatted(
-            selected ? " > " : " ", instances.size() + 1, instances.size() + 2),
+        Line title = Line.from(span("%sCONNECTIONS / ACTIVITY ".formatted(
+            selected ? " > " : " "),
             selected ? Color.LIGHT_CYAN : Color.WHITE, colors));
         panel(area, buffer, title, connections, selected, colors, selected ? 1 : 3);
     }
 
-    private int preferredWidth(Pane pane, int index) {
+    private int preferredWidth(Pane pane) {
         int contentWidth = pane.rows()
             .stream()
             .map(Line::from)
@@ -144,14 +144,13 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
             .orElse(0) + 4;
         return Math.max(pane.widget()
             .preferredWidth(),
-            Math.max(contentWidth, paneTitle(pane, index, true, false).width() + 2));
+            Math.max(contentWidth, paneTitle(pane, true, false).width() + 2));
     }
 
-    private Line paneTitle(Pane pane, int index, boolean selected, boolean enabled) {
+    private Line paneTitle(Pane pane, boolean selected, boolean enabled) {
         Line title = Line.from(
-            span("%s%d/%d  %s  ".formatted(selected ? " > " : " ", index + 1,
-                instances.size() + 2, pane.instance()
-                    .name()),
+            span("%s%s  ".formatted(selected ? " > " : " ", pane.instance()
+                .name()),
                 selected ? Color.LIGHT_CYAN : Color.WHITE, enabled),
             span("%s ".formatted(pane.instance()
                 .type()), Color.LIGHT_BLUE, enabled));
@@ -171,7 +170,7 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
                 ? pane.widget()
                     .lines(contentRows)
                 : pane.rows();
-        panel(area, buffer, paneTitle(pane, index, selected, enabled),
+        panel(area, buffer, paneTitle(pane, selected, enabled),
             styled(rows, enabled), selected, enabled, selected ? 1 : 3);
     }
 

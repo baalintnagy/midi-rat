@@ -27,7 +27,7 @@ network:
     - name: Chord display
       type: midi-chord
       sources: [sounding]
-      settings: {}
+      settings: {maxChords: 8}
     - name: Manual emitter
       type: midi-emitter
       destinations: [synth]
@@ -97,7 +97,7 @@ network:
     - name: Chords
       type: midi-chord
       sources: [performance]
-      settings: {}
+      settings: {maxChords: 8}
 `,
             },
         ],

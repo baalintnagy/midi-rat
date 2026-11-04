@@ -25,6 +25,22 @@ const processor = (name, sources, destinations) => ({
     settings: {},
 });
 
+test('chord candidate limits are preserved when parsing a network', () => {
+    const graph = buildNetwork(
+        network([
+            {
+                name: 'chord',
+                type: 'midi-chord',
+                sources: ['input'],
+                settings: { maxChords: 5 },
+            },
+        ]),
+    );
+    const chord = graph.nodes.find((node) => node.name === 'chord');
+    assert.equal(chord.role, 'monitor');
+    assert.deepEqual(chord.configuration.settings, { maxChords: 5 });
+});
+
 test('the example graph retains buses, fan-out, observers and physical bindings', () => {
     const selected = selectDocuments(examples.performance.files);
     const graph = buildNetwork(selected.network, selected.application);
