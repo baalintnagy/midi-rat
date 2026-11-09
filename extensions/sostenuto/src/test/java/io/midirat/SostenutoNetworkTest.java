@@ -105,7 +105,7 @@ class SostenutoNetworkTest {
             .toList();
         var config = new NetworkConfig(prepared.endpoints(), instances);
         try (var engine = new RoutingEngine(config, (target, messages, _) -> {
-            assertEquals("postSSB", target.name());
+            assertEquals("VirtOut", target.name());
             messages.forEach(message -> {
                 physical.add(message.hex());
                 physicalDone.countDown();

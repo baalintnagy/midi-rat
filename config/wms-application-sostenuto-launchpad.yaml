@@ -25,5 +25,5 @@ application:
       launchpad-midi-3:
         id: '\\?\swd#midisrv#midiu_ksa_14241305019553648742#{e7cce071-3c03-423f-88d3-f1045d02552b}#group=2'
     outputs:
-      postSSB:
+      VirtOut:
         id: '\\?\swd#midisrv#midiu_loop_b_ac4e94fcb00b41f19ccfd4d5210873e4#{e7cce071-3c03-423f-88d3-f1045d02552b}#group=0'

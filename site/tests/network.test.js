@@ -276,7 +276,7 @@ for (const direction of ['RIGHT', 'DOWN']) {
         const targets = model.edges
             .filter((edge) => edge.source === emitter.id)
             .map((edge) => model.nodes.find((node) => node.id === edge.target).name);
-        assert.deepEqual(targets, ['postSSB']);
+        assert.deepEqual(targets, ['VirtOut']);
         const layout = await layoutNetwork(model, direction);
         const segments = layout.edges.flatMap((edge) =>
             edge.sections.flatMap((section) => {

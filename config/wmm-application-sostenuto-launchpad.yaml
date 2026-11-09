@@ -14,4 +14,4 @@ application:
       launchpad-midi-2: "MIDIIN2 (LPProMK3 MIDI)"
       launchpad-midi-3: "MIDIIN3 (LPProMK3 MIDI)"
     outputs:
-      postSSB: "postSSB"
+      VirtOut: "postSSB"

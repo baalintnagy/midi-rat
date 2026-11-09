@@ -22,6 +22,8 @@ import io.midirat.host.Host;
 
 /** UI rendering and keyboard handling stay on this thread; host commands use a control worker. */
 public final class Workspace {
+    private static final int LEFT = 0x110000;
+    private static final int RIGHT = 0x110001;
     private final Host host;
     private final Diagnostics diagnostics;
     private final ExecutorService controls = new ThreadPoolExecutor(
@@ -31,6 +33,7 @@ public final class Workspace {
             .name("host-controls")
             .factory());
     private int focused = -1;
+    private final WorkspaceView.Pages pages = new WorkspaceView.Pages();
     private boolean helpDetails;
     private final HostPanel.Scroll helpScroll = new HostPanel.Scroll(0);
     private boolean hostDetails;
@@ -71,7 +74,7 @@ public final class Workspace {
             boolean running = true;
             while (running) {
                 terminal.draw(this::render);
-                int key = backend.read(50);
+                int key = readKey(backend);
                 if (key < 0) {
                     continue;
                 }
@@ -98,6 +101,8 @@ public final class Workspace {
                 case 'q', 3 -> running = false;
                 case 9, 'j' -> focused++;
                 case 'k' -> focused--;
+                case LEFT -> focused = pages.move(-1, focused);
+                case RIGHT -> focused = pages.move(1, focused);
                 case 'h' -> {
                     hostDetails = true;
                     focused = instances.size();
@@ -177,6 +182,29 @@ public final class Workspace {
     @FunctionalInterface
     private interface Command {
         void run() throws Exception;
+    }
+
+    private static int readKey(Backend backend) throws IOException {
+        int key = backend.read(50);
+        if (key != 27) {
+            return key;
+        }
+        int prefix = backend.peek(30);
+        if (prefix != '['
+            && prefix != 'O') {
+            return key;
+        }
+        backend.read(30);
+        int code;
+        do {
+            code = backend.read(30);
+        } while (code >= 0x20
+            && code <= 0x3f);
+        return switch (code) {
+        case 'D' -> LEFT;
+        case 'C' -> RIGHT;
+        default -> -1;
+        };
     }
 
     private boolean detailKey(int key, List<Instance> instances) {
@@ -330,7 +358,7 @@ public final class Workspace {
         }
         WorkspaceView view = new WorkspaceView(host.status(), instances, focused,
             new WorkspaceView.Editor(editor.active(), editor.format(), editor.text()),
-            copied, colorTerminal);
+            copied, colorTerminal, pages);
         frame.renderWidget(view, frame.area());
     }
 }

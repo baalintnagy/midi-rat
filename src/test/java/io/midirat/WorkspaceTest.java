@@ -28,7 +28,7 @@ class WorkspaceTest {
     Path directory;
 
     @ParameterizedTest
-    @ValueSource(strings = { "q", "jdxdhhq", "jjdmmdhhq", "host", "help" })
+    @ValueSource(strings = { "q", "jdxdhhq", "jjdmmdhhq", "host", "help", "arrows" })
     void rendersTamboWorkspaceAndExitsOnKeyboard(String keys) throws Exception {
         Files.writeString(directory.resolve("application.yaml"),
             """
@@ -73,6 +73,7 @@ class WorkspaceTest {
         String inputKeys = switch (keys) {
         case "host" -> "\t\t\tdmmdq";
         case "help" -> "d]dq";
+        case "arrows" -> "\u001b[C\u001b[D\u001bOC\u001bODdq";
         case "q" -> keys;
         default -> "j%s".formatted(keys);
         };
@@ -105,6 +106,8 @@ class WorkspaceTest {
         } else if (keys.equals("help")) {
             assertTrue(screen.contains("Keyboardhelp"), screen);
             assertTrue(screen.contains("Ctrl+P"), screen);
+        } else if (keys.equals("arrows")) {
+            assertTrue(screen.contains("Messages|mpage"), screen);
         } else if (keys.length() > 1) {
             assertTrue(screen.contains(keys.startsWith("jj") ? "BlockedLOG" : "MessagesLOG"),
                 screen);

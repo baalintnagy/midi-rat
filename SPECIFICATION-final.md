@@ -11,6 +11,12 @@ MIDI Rat is a modular, near-real-time MIDI utility with a terminal user interfac
 It connects physical MIDI ports and internal buses through modules that inspect,
 filter, generate, and transform MIDI messages.
 
+**[User long-term direction, 7 November 2026]** Aim for a mathematical design in
+the sense of small, precisely defined primitives and their composition, rather
+than formula-heavy presentation. Richer behavior should be constructible from
+those primitives. This direction does not itself select a routing decomposition
+or authorize changes to the existing remap module; those designs remain open.
+
 This specification consolidates the original requirements, subsequent user decisions,
 and the accepted filter DSL refinements. It supersedes earlier specification text
 where they conflict. It contains the application and network schemas, all current
@@ -1137,7 +1143,7 @@ Bind this output by exact name for WinMM and discovered stable endpoint/group ID
 for Windows MIDI Services.
 
 **[User example addition, 30 October 2026]** Both sostenuto example networks also
-include a `midi-emitter` named `EMT`, with `destinations: [postSSB]`,
+include a `midi-emitter` named `EMT`, with `destinations: [VirtOut]` (output alias for physical `postSSB`),
 `format: hex`, and an initially empty `messages` list. It sends only when invoked
 by the user and connects directly to the physical output. The same shared networks
 serve all four WinMM/Windows MIDI Services application examples.
@@ -1267,6 +1273,20 @@ elastic monitors on full-width rows, and return to stacked rows as the terminal
 narrows. Measure terminal display cells, including borders and spacing; use the
 tallest widget to determine each shared row's height. Module data and behavior stay
 unchanged.
+
+**[User presentation revision, 7 November 2026; automatic paging]** Pack module
+rows into automatic workspace pages based on the current terminal dimensions,
+preserving instance order and adaptive columns. Show the current page, total pages,
+and module range when more than one page exists. Left/Right arrows select the previous/next
+page with wrapping and focus its first module. Tab/`j`/`k` focus navigation follows
+modules across page boundaries. Repack on resize while keeping the focused module
+visible; preserve the current page when the title or host is focused. Keep the title,
+active editor, and compact host status visible on normal pages. Continue draining
+hidden monitors and keep all modules active. Retain focused-widget fallback when
+a page cannot fit its content.
+**[Design decision, 7 November 2026]** Reserve four monitor content rows when packing
+pages; distribute remaining content rows equally among the visible elastic monitors.
+Reserve one page-indicator line in the packing budget to avoid unstable page counts.
 
 **[User chord-width revision, 1 November 2026; design completion]** Give the chord
 widget a wider preferred minimum of 64 terminal cells, including borders and padding.

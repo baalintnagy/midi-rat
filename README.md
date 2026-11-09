@@ -196,12 +196,20 @@ to return. Use `[` and `]` to scroll the help on smaller terminals. Compact modu
 columns when they fit, and monitors retain full-width rows. Connections / Activity is
 also focusable and summarizes the backend, outputs, and module health.
 
+When modules exceed the terminal height, the workspace automatically divides them
+into pages and shows the page number and visible module range. Left/Right arrows switch
+workspace pages, wrapping at either end and focusing the first module on the page.
+Tab/`j`/`k` also switch pages as focus moves between modules. Resizing repacks pages
+while keeping the focused module visible. All modules remain active, including
+hidden monitors. Very small terminals fall back to showing the focused widget.
+
 | Key | Action |
 | --- | --- |
 | `d` | Open full-screen details for the focused widget. |
 | Esc / `d` | Return from details to the workspace. |
 | `m` / Tab in details | Cycle the available pages. |
-| `[` / `]` | Scroll a rules, configuration, or status page. |
+| Left/Right arrows | Previous/next workspace page. |
+| `[` / `]` in details/help | Scroll information. |
 | `<` / `>` | Pan wide message-log columns. |
 | `p` / `c` / `y` | Pause/resume, clear, or copy from the selected monitor/log. |
 | `x` in log details | Toggle raw/decoded payload details. |

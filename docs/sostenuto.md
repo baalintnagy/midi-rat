@@ -92,14 +92,14 @@ The input monitor and sostenuto both subscribe to `musical-input`: the monitor s
 filtered input before pedal processing, including the control trigger. The chord
 observer reads only `sostenuto-output`, after retention and trigger consumption.
 The processor also sends its output to physical `postSSB`. Umbrella remains enabled
-with a 1 ms delay and 1 ms tail. Both backend application variants bind `postSSB`;
+with a 1 ms delay and 1 ms tail. Both backend application variants bind alias `VirtOut` to `postSSB`;
 Windows MIDI Services uses its discovered stable endpoint/group ID.
 
 The instance names are `M-IN` (musical-message filter), `MON` (input monitor),
 `SOS` (sostenuto), `CHRD` (chord observer), and `EMT` (manual emitter).
 
 Both networks also include `EMT`, an initially empty hex emitter connected
-directly to `postSSB`. Focus it with Tab, use `e` to edit or `v` to paste a copied
+directly to `VirtOut` (physical port `postSSB`). Focus it with Tab, use `e` to edit or `v` to paste a copied
 message, and press Enter to send the sequence. Its direct output is separate from
 the MON and chord-observer subscriptions. These networks are shared by
 their WinMM and Windows MIDI Services application variants.

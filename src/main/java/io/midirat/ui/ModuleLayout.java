@@ -51,6 +51,28 @@ final class ModuleLayout {
     private ModuleLayout() {
     }
 
+    static List<List<Row>> pages(List<Row> rows, int availableHeight) {
+        List<List<Row>> pages = new ArrayList<>();
+        List<Row> pending = new ArrayList<>();
+        int used = 0;
+        for (Row row : rows) {
+            // Reserve four content rows for each elastic monitor when packing pages.
+            int height = (row.elastic() ? 4 : row.height()) + 3;
+            if (!pending.isEmpty()
+                && used + height > availableHeight) {
+                pages.add(List.copyOf(pending));
+                pending.clear();
+                used = 0;
+            }
+            pending.add(row);
+            used += height;
+        }
+        if (!pending.isEmpty()) {
+            pages.add(List.copyOf(pending));
+        }
+        return List.copyOf(pages);
+    }
+
     static List<Row> rows(List<Item> items, int availableWidth) {
         List<Row> rows = new ArrayList<>();
         List<Item> pending = new ArrayList<>();

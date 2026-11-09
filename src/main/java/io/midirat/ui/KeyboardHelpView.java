@@ -14,6 +14,7 @@ record KeyboardHelpView(HostPanel.Scroll scroll, boolean colors) implements Widg
         "WORKSPACE",
         "Tab / j: next focus | k: previous focus (including the MIDI Rat title)",
         "d: open focused widget details; title details show this help",
+        "Left/Right: previous/next workspace page (focus follows automatically)",
         "h: Connections / Activity details",
         "r: reload network | R: reconnect devices",
         "P / Ctrl+P: explicit Panic on all buses and physical outputs",

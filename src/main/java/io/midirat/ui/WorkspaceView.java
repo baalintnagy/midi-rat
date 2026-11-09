@@ -23,7 +23,29 @@ import io.midirat.host.HostStatus;
 
 /** Bordered terminal presentation, independent of host commands and MIDI processing. */
 record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
-    Editor editor, String copied, boolean colors) implements Widget {
+    Editor editor, String copied, boolean colors, Pages pages) implements Widget {
+    WorkspaceView(HostStatus status, List<Instance> instances, int focused,
+        Editor editor, String copied, boolean colors) {
+        this(status, instances, focused, editor, copied, colors, new Pages());
+    }
+
+    static final class Pages {
+        private List<List<ModuleLayout.Row>> layouts = List.of();
+        private int current;
+
+        int move(int direction, int focused) {
+            if (layouts.isEmpty()) {
+                return focused;
+            }
+            current = Math.floorMod(current + direction, layouts.size());
+            return layouts.get(current)
+                .getFirst()
+                .items()
+                .getFirst()
+                .index();
+        }
+    }
+
     record Editor(boolean active, String format, String text) {
     }
 
@@ -59,6 +81,32 @@ record WorkspaceView(HostStatus status, List<Instance> instances, int focused,
                     .elastic()));
         }
         List<ModuleLayout.Row> layout = ModuleLayout.rows(items, area.width());
+        int pageHostHeight = Math.min(connections.size() + 2, Math.max(5, area.height() / 3));
+        pages.layouts = ModuleLayout.pages(layout,
+            area.height() - header.size() - pageHostHeight - 2);
+        pages.current = Math.min(pages.current, Math.max(0, pages.layouts.size() - 1));
+        for (int page = 0; page < pages.layouts.size(); page++) {
+            if (pages.layouts.get(page)
+                .stream()
+                .flatMap(row -> row.items()
+                    .stream())
+                .anyMatch(item -> item.index() == focused)) {
+                pages.current = page;
+            }
+        }
+        if (pages.layouts.size() > 1) {
+            layout = pages.layouts.get(pages.current);
+            header.add(Line.from("Page %d/%d | modules %d-%d | Left/Right".formatted(
+                pages.current + 1, pages.layouts.size(),
+                layout.getFirst()
+                    .items()
+                    .getFirst()
+                    .index() + 1,
+                layout.getLast()
+                    .items()
+                    .getLast()
+                    .index() + 1)));
+        }
         int elasticCount = (int) layout.stream()
             .filter(ModuleLayout.Row::elastic)
             .count();

@@ -20,6 +20,63 @@ import org.junit.jupiter.api.Test;
 
 class WorkspaceViewTest {
     @Test
+    void hiddenPageMonitorsDrainAndHostFocusKeepsThePage() {
+        var monitors = IntStream.range(0, 4)
+            .mapToObj(index -> new ElasticRows())
+            .toList();
+        var instances = IntStream.range(0, 4)
+            .mapToObj(index -> instance("monitor-%d".formatted(index), monitors.get(index)))
+            .toList();
+        var pages = new WorkspaceView.Pages();
+        var editor = new WorkspaceView.Editor(false, "hex", "");
+        var area = Rect.of(80, 25);
+        var buffer = Buffer.empty(area);
+        new WorkspaceView(hostStatus(), instances, 3, editor, "", false, pages)
+            .render(area, buffer);
+        assertTrue(text(buffer).contains("Page 2/2"));
+        assertEquals(1, monitors.getFirst().budget);
+        assertTrue(monitors.getLast().budget >= 4);
+        var host = Buffer.empty(area);
+        new WorkspaceView(hostStatus(), instances, 4, editor, "", false, pages)
+            .render(area, host);
+        assertTrue(text(host).contains("Page 2/2"));
+        assertTrue(text(host).contains("> CONNECTIONS / ACTIVITY"));
+        assertEquals(0, pages.move(1, 4));
+        assertEquals(2, pages.move(-1, 0));
+    }
+
+    @Test
+    void automaticPagesFollowFocusAndRepackAfterResize() {
+        var instances = IntStream.range(0, 6)
+            .mapToObj(index -> instance("module-%d".formatted(index),
+                ModuleWidget.fixed(() -> List.of("Setting: on"))))
+            .toList();
+        var pages = new WorkspaceView.Pages();
+        var editor = new WorkspaceView.Editor(false, "hex", "");
+        var small = Rect.of(30, 20);
+        var first = Buffer.empty(small);
+        new WorkspaceView(hostStatus(), instances, 0, editor, "", false, pages)
+            .render(small, first);
+        assertTrue(text(first).contains("Page 1/3"));
+        assertTrue(text(first).contains("module-1"));
+        assertFalse(text(first).contains("module-2"));
+        assertEquals(2, pages.move(1, 0));
+        var second = Buffer.empty(small);
+        new WorkspaceView(hostStatus(), instances, 2, editor, "", false, pages)
+            .render(small, second);
+        assertTrue(text(second).contains("Page 2/3"));
+        assertTrue(text(second).contains("> module-2"));
+        assertEquals(0, pages.move(-1, 2));
+        var large = Rect.of(160, 40);
+        var expanded = Buffer.empty(large);
+        new WorkspaceView(hostStatus(), instances, 2, editor, "", false, pages)
+            .render(large, expanded);
+        assertFalse(text(expanded).contains("Page "));
+        assertTrue(text(expanded).contains("> module-2"));
+        assertTrue(text(expanded).contains("module-5"));
+    }
+
+    @Test
     void titleIsFocusableWithoutInlineKeyboardHelp() {
         var area = Rect.of(100, 20);
         var buffer = Buffer.empty(area);

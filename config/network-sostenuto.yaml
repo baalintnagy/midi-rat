@@ -31,7 +31,7 @@ network:
     - name: SOS
       type: sostenuto
       sources: [musical-input]
-      destinations: [sostenuto-output, postSSB]
+      destinations: [sostenuto-output, VirtOut]
       settings:
         controlOrigins: [hammer-midi-3]
         trigger:
@@ -50,7 +50,7 @@ network:
       settings: {maxChords: 6}
     - name: EMT
       type: midi-emitter
-      destinations: [postSSB]
+      destinations: [VirtOut]
       settings:
         format: hex
         messages: []
