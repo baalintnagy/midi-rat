@@ -41,7 +41,7 @@ class SostenutoNetworkTest {
         try {
             var filter = network.instances()
                 .getFirst();
-            assertEquals(8, filter.sources()
+            assertEquals(7, filter.sources()
                 .size());
             for (var source : filter.sources()) {
                 for (String hex : List.of("90 3C 64", "80 3C 2D", "90 3C 00", "B0 40 7F",
@@ -105,7 +105,7 @@ class SostenutoNetworkTest {
             .toList();
         var config = new NetworkConfig(prepared.endpoints(), instances);
         try (var engine = new RoutingEngine(config, (target, messages, _) -> {
-            assertEquals("VirtOut", target.name());
+            assertEquals("virt-out", target.name());
             messages.forEach(message -> {
                 physical.add(message.hex());
                 physicalDone.countDown();
@@ -115,7 +115,7 @@ class SostenutoNetworkTest {
             engine.activate();
             for (String event : List.of("hammer-main/90 4E 5A", "launchpad-main/90 4E 64",
                 "hammer-main/80 4E 00", "hammer-main/90 3C 64", "hammer-main/80 3C 20",
-                "launchpad-main/80 4E 00", "launchpad-main/90 4E 64", "motu/F8",
+                "launchpad-main/80 4E 00", "launchpad-main/90 4E 64", "hammer-main/F8",
                 "hammer-main/F0 01 F7", "launchpad-main/FA")) {
                 String[] parts = event.split("/", 2);
                 engine.receive(new Envelope(config.endpoints()

@@ -9,7 +9,6 @@ network:
         - hammer-midi-2
         - hammer-midi-3
         - hammer-midi-4
-        - motu
         - launchpad-main
         - launchpad-midi-2
         - launchpad-midi-3

@@ -9,7 +9,6 @@ network:
         - hammer-midi-2
         - hammer-midi-3
         - hammer-midi-4
-        - motu
         - launchpad-main
         - launchpad-midi-2
         - launchpad-midi-3
@@ -31,7 +30,7 @@ network:
     - name: SOS
       type: sostenuto
       sources: [musical-input]
-      destinations: [sostenuto-output, VirtOut]
+      destinations: [sostenuto-output, virt-out]
       settings:
         controlOrigins: [hammer-midi-3]
         trigger:
@@ -50,7 +49,7 @@ network:
       settings: {maxChords: 6}
     - name: EMT
       type: midi-emitter
-      destinations: [VirtOut]
+      destinations: [virt-out]
       settings:
         format: hex
         messages: []

@@ -76,14 +76,14 @@ cleanup MIDI. Input origin and receipt timestamps are preserved for delayed resu
 ## Run the demo
 
 [network-sostenuto.yaml](../config/network-sostenuto.yaml) combines musical MIDI from
-all eight configured inputs, using CC22 from `hammer-midi-3` as the dedicated
+all seven configured inputs, using CC22 from `hammer-midi-3` as the dedicated
 momentary pedal control.
 The second example, [network-sostenuto-launchpad.yaml](../config/network-sostenuto-launchpad.yaml),
 uses `launchpad-main` (`LPProMK3 MIDI`) as its dedicated control origin. Note 78
 toggles sostenuto once per press; release re-arms the next
 press and the control note is consumed.
 
-Both examples route all eight input aliases through one musical-message filter into
+Both examples route all seven input aliases through one musical-message filter into
 `musical-input`. It accepts note-on/off, CC, pitch bend, channel/polyphonic pressure,
 and program changes. CLOCK, SysEx, transport, and other system messages are excluded.
 `postSSA` and `postSSB` remain excluded from inputs to avoid loopback feedback.
@@ -92,14 +92,14 @@ The input monitor and sostenuto both subscribe to `musical-input`: the monitor s
 filtered input before pedal processing, including the control trigger. The chord
 observer reads only `sostenuto-output`, after retention and trigger consumption.
 The processor also sends its output to physical `postSSB`. Umbrella remains enabled
-with a 1 ms delay and 1 ms tail. Both backend application variants bind alias `VirtOut` to `postSSB`;
+with a 1 ms delay and 1 ms tail. Both backend application variants bind alias `virt-out` to `postSSB`;
 Windows MIDI Services uses its discovered stable endpoint/group ID.
 
 The instance names are `M-IN` (musical-message filter), `MON` (input monitor),
 `SOS` (sostenuto), `CHRD` (chord observer), and `EMT` (manual emitter).
 
 Both networks also include `EMT`, an initially empty hex emitter connected
-directly to `VirtOut` (physical port `postSSB`). Focus it with Tab, use `e` to edit or `v` to paste a copied
+directly to `virt-out` (physical port `postSSB`). Focus it with Tab, use `e` to edit or `v` to paste a copied
 message, and press Enter to send the sequence. Its direct output is separate from
 the MON and chord-observer subscriptions. These networks are shared by
 their WinMM and Windows MIDI Services application variants.
@@ -108,7 +108,7 @@ their WinMM and Windows MIDI Services application variants.
 
 ```mermaid
 flowchart LR
-    I[All eight inputs] --> F[M-IN: Musical-message filter]
+    I[All seven inputs] --> F[M-IN: Musical-message filter]
     F --> B([musical-input])
     B --> M[MON: Input monitor]
     B --> S["SOS: Sostenuto<br/>hammer-midi-3 · CC22 hold"]
@@ -122,7 +122,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    I[All eight inputs] --> F[M-IN: Musical-message filter]
+    I[All seven inputs] --> F[M-IN: Musical-message filter]
     F --> B([musical-input])
     B --> M[MON: Input monitor]
     B --> S["SOS: Sostenuto<br/>launchpad-main · note 78 toggle"]

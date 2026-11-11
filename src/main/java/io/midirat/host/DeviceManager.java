@@ -24,6 +24,7 @@ public final class DeviceManager implements AutoCloseable {
     private final Consumer<String> errors;
     private final long origin;
     private final Map<String, MidiBackend.Input> inputs = new LinkedHashMap<>();
+    private final Map<String, MidiBackend.Port> inputPorts = new LinkedHashMap<>();
     private final Map<String, OutputRoute> handles = new LinkedHashMap<>();
     private final Map<Endpoint, OutputRoute> outputs = new ConcurrentHashMap<>();
     private final LatencyMetrics latency = new LatencyMetrics();
@@ -59,6 +60,7 @@ public final class DeviceManager implements AutoCloseable {
                 .forEach((alias, binding) -> {
                     MidiBackend.Port port = backend.resolve(binding, true);
                     ports.put(port.key(), port);
+                    inputPorts.put(alias, port);
                     shared.computeIfAbsent(port.key(), _ -> new ArrayList<>())
                         .add(new Endpoint(alias, Endpoint.Kind.INPUT));
                 });
@@ -122,7 +124,14 @@ public final class DeviceManager implements AutoCloseable {
                 entry.getValue().queue.size(), entry.getValue().lost.sum()))
             .toList();
         return new HostStatus.Devices(app.backend(), inputs.size(), handles.size(),
-            latency.summary(), connections);
+            latency.summary(), connections, inputPorts.entrySet()
+                .stream()
+                .map(entry -> new HostStatus.Connection(entry.getKey(), entry.getValue()
+                    .name(),
+                    inputs.containsKey(entry.getValue()
+                        .key()),
+                    0, 0))
+                .toList());
     }
 
     public synchronized void reconnect() {
@@ -140,6 +149,7 @@ public final class DeviceManager implements AutoCloseable {
                 }
             });
         inputs.clear();
+        inputPorts.clear();
         handles.values()
             .forEach(OutputRoute::close);
         handles.clear();

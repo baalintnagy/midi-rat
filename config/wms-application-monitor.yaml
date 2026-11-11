@@ -14,9 +14,6 @@ application:
         id: '\\?\swd#midisrv#midiu_ksa_5095029665903232510#{e7cce071-3c03-423f-88d3-f1045d02552b}#group=2'
       hammer-midi-4:
         id: '\\?\swd#midisrv#midiu_ksa_5095029665903232510#{e7cce071-3c03-423f-88d3-f1045d02552b}#group=3'
-      # MOTU M Series MIDI, group 1.
-      motu:
-        id: '\\?\swd#midisrv#midiu_ksa_454588508982398443#{e7cce071-3c03-423f-88d3-f1045d02552b}#group=0'
       # Launchpad Pro MK3, groups 1–3.
       launchpad-main:
         id: '\\?\swd#midisrv#midiu_ksa_14241305019553648742#{e7cce071-3c03-423f-88d3-f1045d02552b}#group=0'

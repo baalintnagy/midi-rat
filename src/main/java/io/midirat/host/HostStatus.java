@@ -12,9 +12,15 @@ public record HostStatus(Devices devices, List<Endpoint> endpoints, List<Route> 
     }
 
     public record Devices(String backend, int inputs, int outputs, String latency,
-        List<Connection> connections) {
+        List<Connection> connections, List<Connection> inputConnections) {
+        public Devices(String backend, int inputs, int outputs, String latency,
+            List<Connection> connections) {
+            this(backend, inputs, outputs, latency, connections, List.of());
+        }
+
         public Devices {
             connections = List.copyOf(connections);
+            inputConnections = List.copyOf(inputConnections);
         }
     }
 

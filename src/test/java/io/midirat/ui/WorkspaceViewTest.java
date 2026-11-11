@@ -242,7 +242,7 @@ class WorkspaceViewTest {
     }
 
     @Test
-    void hostSummaryIsFocusableAndShowsOnlyTheThreeSummaryCategories() {
+    void hostSummaryIsFocusableAndShowsBackendCountsAndModuleTotals() {
         for (int width : List.of(80, 160)) {
             var area = Rect.of(width, 20);
             var buffer = Buffer.empty(area);
@@ -253,7 +253,7 @@ class WorkspaceViewTest {
             assertFalse(rendered.contains("d details"));
             assertTrue(rendered.contains("> CONNECTIONS / ACTIVITY"));
             assertTrue(rendered.contains("Backend: winmm | inputs=8 outputs=1"));
-            assertTrue(rendered.contains("Output: postSSB -> postSSB | open | queue=0 lost=0"));
+            assertFalse(rendered.contains("Output:"));
             assertTrue(rendered.contains("Modules:"));
             assertFalse(rendered.contains("Timing:"));
             assertFalse(rendered.contains("Activity:"));
@@ -273,7 +273,7 @@ class WorkspaceViewTest {
     }
 
     @Test
-    void wrappedConnectionTailsRemainVisibleInTheCompactHostWidget() {
+    void compactHostWidgetHidesConnectionDetails() {
         var status = new HostStatus(new HostStatus.Devices("windows-midi-services", 8, 1,
             "submission n=128 median=2200 p95=4100 p99=6500 max=8100 jitter=4300 ns",
             List.of(new HostStatus.Connection("postSSB",
@@ -285,7 +285,7 @@ class WorkspaceViewTest {
         new WorkspaceView(status, List.of(), 0,
             new WorkspaceView.Editor(false, "hex", ""), "", true).render(area, buffer);
         String rendered = text(buffer);
-        assertTrue(rendered.contains("END-OF-PORT"));
+        assertFalse(rendered.contains("END-OF-PORT"));
         assertFalse(rendered.contains("jitter=4300"));
     }
 

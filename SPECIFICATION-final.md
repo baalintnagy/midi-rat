@@ -1143,7 +1143,7 @@ Bind this output by exact name for WinMM and discovered stable endpoint/group ID
 for Windows MIDI Services.
 
 **[User example addition, 30 October 2026]** Both sostenuto example networks also
-include a `midi-emitter` named `EMT`, with `destinations: [VirtOut]` (output alias for physical `postSSB`),
+include a `midi-emitter` named `EMT`, with `destinations: [virt-out]` (output alias for physical `postSSB`),
 `format: hex`, and an initially empty `messages` list. It sends only when invoked
 by the user and connects directly to the physical output. The same shared networks
 serve all four WinMM/Windows MIDI Services application examples.
@@ -1293,10 +1293,18 @@ widget a wider preferred minimum of 64 terminal cells, including borders and pad
 Honor widget width preferences through the module API; retain adaptive layout and
 constrain widths to the available terminal width. Other widgets keep the 24-cell default.
 
-**[User presentation revision, 1 November 2026; design completion D20]** Structure
-the compact host widget as full-width Backend, Output, and Modules summary rows only.
+**[User presentation revision, 1 November 2026; updated 9 November 2026;
+design completion D20]** Structure
+the compact host widget with Backend and Modules on one wrapped summary line, including
+input/output counts but no individual outputs.
 Wrap long values using terminal display cells and allocate their wrapped height.
-Show individual modules, timing, endpoint aliases, and activity in full-screen details.
+Show all input and output alias-to-port mappings, connection status, individual modules,
+timing, endpoint aliases, and activity in full-screen details. Group connections under
+`Inputs:`, `Outputs:`, and `Buses:` with four-space-indented entries; omit duplicate
+uppercase endpoint lists. Group module entries under `Modules:` with the same indentation.
+Place Timing last in the status details.
+Bus entries show active status and zero queue/loss counts
+because bus dispatch is synchronous; subscriber queue/loss counts remain module metrics.
 Do not change module processing or other widget content.
 
 **[User presentation revision, 1 November 2026; design completion D21]** Widget details

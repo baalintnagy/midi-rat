@@ -9,9 +9,8 @@ application:
       hammer-midi-2: "MIDIIN2 (Hammer 88 Pro)"
       hammer-midi-3: "MIDIIN3 (Hammer 88 Pro)"
       hammer-midi-4: "MIDIIN4 (Hammer 88 Pro)"
-      motu: "MOTU M Series MIDI In"
       launchpad-main: "LPProMK3 MIDI"
       launchpad-midi-2: "MIDIIN2 (LPProMK3 MIDI)"
       launchpad-midi-3: "MIDIIN3 (LPProMK3 MIDI)"
     outputs:
-      VirtOut: "postSSB"
+      virt-out: "postSSB"

@@ -14,6 +14,30 @@ import org.junit.jupiter.api.Test;
 
 class HostPanelTest {
     @Test
+    void detailsShowEveryInputAndOutputMappingWithExistingStatus() {
+        var status = new HostStatus(new HostStatus.Devices("winmm", 1, 1, "No samples",
+            List.of(new HostStatus.Connection("synth", "Synth port", false, 4, 7)),
+            List.of(new HostStatus.Connection("keys", "Keyboard port", true, 0, 0),
+                new HostStatus.Connection("keys-copy", "Keyboard port", true, 0, 0))),
+            List.of(new Endpoint("M-IN", Endpoint.Kind.BUS)),
+            List.of(new HostStatus.Route("processor", true, 2, 3)));
+        String text = HostPanel.status(status, true, 160, false)
+            .stream()
+            .map(Line::rawContent)
+            .collect(Collectors.joining("\n"));
+        assertTrue(text.contains("    keys -> Keyboard port | open"));
+        assertTrue(text.contains("    keys-copy -> Keyboard port | open"));
+        assertTrue(text.contains("    synth -> Synth port | unavailable | queue=4 lost=7"));
+        assertTrue(text.contains("Modules:\n    processor: active | queue=2 lost=3"));
+        assertTrue(text.endsWith("Timing: No samples"));
+        assertTrue(text.contains("Inputs:\n    keys"));
+        assertTrue(text.contains("Outputs:\n    synth"));
+        assertTrue(text.contains("Buses:\n    M-IN: active | queue=0 lost=0"));
+        assertFalse(text.contains("INPUT:"));
+        assertFalse(text.contains("OUTPUT:"));
+    }
+
+    @Test
     void scrollingClampsAtBothEndsAndAfterResize() {
         var scroll = new HostPanel.Scroll(0);
         scroll.position(6);
@@ -31,7 +55,8 @@ class HostPanelTest {
         String port = "Very long hardware port name with 日本語 and a distinctive END-OF-PORT";
         String latency = "submission n=128 median=2200 p95=4100 p99=6500 max=8100 jitter=4300 ns";
         var status = new HostStatus(new HostStatus.Devices("windows-midi-services", 8, 1,
-            latency, List.of(new HostStatus.Connection("postSSB", port, true, 0, 0))),
+            latency, List.of(new HostStatus.Connection("postSSB", port, true, 0, 0)),
+            List.of(new HostStatus.Connection("last-input-alias", "Keyboard", true, 0, 0))),
             List.of(new Endpoint("last-input-alias", Endpoint.Kind.INPUT),
                 new Endpoint("last-bus-alias", Endpoint.Kind.BUS)),
             List.of(new HostStatus.Route("sostenuto", true, 0, 0)));
@@ -51,7 +76,7 @@ class HostPanelTest {
     }
 
     @Test
-    void summaryContainsOnlyBackendOutputsAndModuleTotals() {
+    void summaryContainsOnlyBackendCountsAndModuleTotals() {
         var status = new HostStatus(new HostStatus.Devices("winmm", 2, 0, "No samples", List.of()),
             List.of(), List.of(new HostStatus.Route("healthy-observer", true, 0, 0),
                 new HostStatus.Route("failed-processor", false, 0, 0),
@@ -62,7 +87,7 @@ class HostPanelTest {
             .collect(Collectors.joining("\n"));
         assertTrue(text.contains("2 active, 1 disabled | queue=4 lost=7"));
         assertTrue(text.contains("Backend:"));
-        assertTrue(text.contains("Output: --"));
+        assertFalse(text.contains("Output:"));
         assertFalse(text.contains("failed-processor"));
         assertFalse(text.contains("overloaded-monitor"));
         assertFalse(text.contains("healthy-observer"));
